@@ -224,7 +224,7 @@ where "plContext |~ s" := (plt_isWellTyped plContext s)
         | T_Peer: forall context,
                   forall p P1,
             Some P1 = (getPeerType context p) ->
-            context |- interPeerApp p \in Remote P1
+            context |- peerApp p \in Remote P1
 
         | T_AsLocal: forall context,
                      forall P0 P1 t T0 T1,
@@ -232,24 +232,7 @@ where "plContext |~ s" := (plt_isWellTyped plContext s)
             context |- t \in T1 ->
             (areTied context P0 P1) = true ->
             (phi context P0 P1 T1) = Some T0 ->
-            context |- (interAsLocalTerm t (T1 on P1)) \in T0
-
-        (* Added because missing in informal specification.
-           TODO: Check if necessary!
-              In informal specification no explicit rule for 'asLocal x : T1 on P1'
-              exists. Rule T_AsLocal talks about terms in general and therefore 
-              implicitely about variables. The BNF syntax specification contains separate
-              'asLocal x: S' and 'asLocal t: S' productions. While the former one may
-              occur in regular programs the latter one may only occur as an intermediate
-              result during evaluation.
-              => Hence we need separate rules in Coq-formalization.
-        *)
-        | T_AsLocalVar: forall context,
-                        forall P0 P1 x T0 T1,
-            (P0 = (getPeer context)) ->   (* just for better readability *)
-            (areTied context P0 P1) = true ->
-            (phi context P0 P1 T1) = Some T0 ->
-            context |- (asLocal x (T1 on P1)) \in T0
+            context |- (asLocal t (T1 on P1)) \in T0
 
         | T_AsLocalFrom: forall context,
                          forall P0 P1 t0 t1 T,
@@ -257,18 +240,7 @@ where "plContext |~ s" := (plt_isWellTyped plContext s)
             context |- t0 \in T ->
             (areTied context P0 P1) = true ->
             context |- t1 \in Remote P1 ->
-            context |- interAsLocalTermFrom t0 (T on P1) t1 \in T
-
-        (* Added because missing in informal specification.
-           TODO: Check if necessary!
-           See description for [T_AsLocalVar].
-         *)
-        | T_AsLocalFromVar: forall context,
-                            forall P0 P1 x t1 T,
-            (P0 = (getPeer context)) ->   (* just for better readability *)
-            (areTied context P0 P1) = true ->
-            context |- t1 \in Remote P1 ->
-            context |- asLocalFrom x (T on P1) t1 \in T
+            context |- asLocalFrom t0 (T on P1) t1 \in T
 
         | T_Comp: forall context,
                   forall x t0 t1 T0 T1 T2 P0 P1,
@@ -455,7 +427,7 @@ Example test_hasType_TPeer_1:
     (* ensure test setup is correct ... *)
     getPeerType testPeerTyping1Ties1Context (PeerInst 0) = Some (Peer "p0") /\
     (* actual test ... *)
-    testPeerTyping1Ties1Context |- interPeerApp (PeerInst 0) \in Remote (Peer "p0").
+    testPeerTyping1Ties1Context |- peerApp (PeerInst 0) \in Remote (Peer "p0").
 Proof.
   split.
   - reflexivity.
@@ -463,68 +435,12 @@ Proof.
 Qed.
 
 
-Example test_hasType_TAsLocalVar_single_1:
-    (* ensure test setup is correct ... *)
-    getPeer testTies1Context = Peer "p0" /\
-    getTieMult testTies1Context (Peer "p0", Peer "ps") = Some single /\
-    (* actual test ... *)
-    testTies1Context |- (asLocal (Id "x") (Unit on (Peer "ps"))) \in Unit.
-Proof.
-  split.
-  - reflexivity.  (* current peer set correctly *)
-  - split.
-    + reflexivity.  (* ties set up correctly *)
-    + { apply T_AsLocalVar with (P0 := (Peer "p0")).
-        - reflexivity.
-        - reflexivity.
-        - reflexivity.
-      }
-Qed.
-
-
-Example test_hasType_TAsLocalVar_optional_1:
-    (* ensure test setup is correct ... *)
-    getPeer testTies1Context = Peer "p0" /\
-    getTieMult testTies1Context (Peer "p0", Peer "po") = Some optional /\
-    (* actual test ... *)
-    testTies1Context |- (asLocal (Id "x") (Unit on (Peer "po"))) \in Option Unit.
-Proof.
-  split.
-  - reflexivity.  (* current peer set correctly *)
-  - split.
-    + reflexivity.  (* ties set up correctly *)
-    + { apply T_AsLocalVar with (P0 := (Peer "p0")).
-        - reflexivity.
-        - reflexivity.
-        - reflexivity.
-      }
-Qed.
-
-
-Example test_hasType_TAsLocalVar_multiple_1:
-    (* ensure test setup is correct ... *)
-    getPeer testTies1Context = Peer "p0" /\
-    getTieMult testTies1Context (Peer "p0", Peer "pm") = Some multiple /\
-    (* actual test ... *)
-    testTies1Context |- (asLocal (Id "x") (Unit on (Peer "pm"))) \in List Unit.
-Proof.
-  split.
-  - reflexivity.  (* current peer set correctly *)
-  - split.
-    + reflexivity.  (* ties set up correctly *)
-    + { apply T_AsLocalVar with (P0 := (Peer "p0")).
-        - reflexivity.
-        - reflexivity.
-        - reflexivity.
-      }
-Qed.
-
 Example test_hasType_TAsLocal_single_1:
     (* ensure test setup is correct ... *)
     getPeer testTies1Context = Peer "p0" /\
     getTieMult testTies1Context (Peer "p0", Peer "ps") = Some single /\
     (* actual test ... *)
-    testTies1Context |- (interAsLocalTerm unit (Unit on (Peer "ps"))) \in Unit.
+    testTies1Context |- (asLocal unit (Unit on (Peer "ps"))) \in Unit.
 Proof.
   split.
   - reflexivity.  (* current peer set correctly *)
@@ -544,7 +460,7 @@ Example test_hasType_TAsLocal_optional_1:
     getPeer testTies1Context = Peer "p0" /\
     getTieMult testTies1Context (Peer "p0", Peer "po") = Some optional /\
     (* actual test ... *)
-    testTies1Context |- (interAsLocalTerm unit (Unit on (Peer "po"))) \in Option Unit.
+    testTies1Context |- (asLocal unit (Unit on (Peer "po"))) \in Option Unit.
 Proof.
   split.
   - reflexivity.  (* current peer set correctly *)
@@ -564,7 +480,7 @@ Example test_hasType_TAsLocal_multiple_1:
     getPeer testTies1Context = Peer "p0" /\
     getTieMult testTies1Context (Peer "p0", Peer "pm") = Some multiple /\
     (* actual test ... *)
-    testTies1Context |- (interAsLocalTerm unit (Unit on (Peer "pm"))) \in List Unit.
+    testTies1Context |- (asLocal unit (Unit on (Peer "pm"))) \in List Unit.
 Proof.
   split.
   - reflexivity.  (* current peer set correctly *)
@@ -579,79 +495,13 @@ Proof.
 Qed.
 
 
-Example test_hasType_TAsLocalFromVar_single_1:
-    (* ensure test setup is correct ... *)
-    getPeer testPeerTyping1Ties1Context = Peer "p0" /\
-    getPeerType testPeerTyping1Ties1Context (PeerInst 2) = Some (Peer "ps") /\
-    getTieMult testPeerTyping1Ties1Context (Peer "p0", Peer "ps") = Some single /\
-    (* actual test ... *)
-    testPeerTyping1Ties1Context |- asLocalFrom (Id "x") (Unit on (Peer "ps")) (interPeerApp (PeerInst 2)) \in Unit.
-Proof.
-  split.
-  - reflexivity.
-  - split. 
-    + reflexivity.
-    + { split.
-        - reflexivity.
-        - apply T_AsLocalFromVar with (P0 := Peer "p0").
-          + reflexivity.
-          + reflexivity.
-          + apply T_Peer. reflexivity.
-      }
-Qed.
-
-
-Example test_hasType_TAsLocalFromVar_optional_1:
-    (* ensure test setup is correct ... *)
-    getPeer testPeerTyping1Ties1Context = Peer "p0" /\
-    getPeerType testPeerTyping1Ties1Context (PeerInst 3) = Some (Peer "po") /\
-    getTieMult testPeerTyping1Ties1Context (Peer "p0", Peer "po") = Some optional /\
-    (* actual test ... *)
-    testPeerTyping1Ties1Context |- asLocalFrom (Id "x") (Unit on (Peer "po")) (interPeerApp (PeerInst 3)) \in Unit.
-Proof.
-  split.
-  - reflexivity.
-  - split. 
-    + reflexivity.
-    + { split.
-        - reflexivity.
-        - apply T_AsLocalFromVar with (P0 := Peer "p0").
-          + reflexivity.
-          + reflexivity.
-          + apply T_Peer. reflexivity.
-      }
-Qed.
-
-
-Example test_hasType_TAsLocalFromVar_multiple_1:
-    (* ensure test setup is correct ... *)
-    getPeer testPeerTyping1Ties1Context = Peer "p0" /\
-    getPeerType testPeerTyping1Ties1Context (PeerInst 4) = Some (Peer "pm") /\
-    getTieMult testPeerTyping1Ties1Context (Peer "p0", Peer "pm") = Some multiple /\
-    (* actual test ... *)
-    testPeerTyping1Ties1Context |- asLocalFrom (Id "x") (Unit on (Peer "pm")) (interPeerApp (PeerInst 4)) \in Unit.
-Proof.
-  split.
-  - reflexivity.
-  - split. 
-    + reflexivity.
-    + { split.
-        - reflexivity.
-        - apply T_AsLocalFromVar with (P0 := Peer "p0").
-          + reflexivity.
-          + reflexivity.
-          + apply T_Peer. reflexivity.
-      }
-Qed.
-
-
 Example test_hasType_TAsLocalFrom_single_1:
     (* ensure test setup is correct ... *)
     getPeer testPeerTyping1Ties1Context = Peer "p0" /\
     getPeerType testPeerTyping1Ties1Context (PeerInst 2) = Some (Peer "ps") /\
     getTieMult testPeerTyping1Ties1Context (Peer "p0", Peer "ps") = Some single /\
     (* actual test ... *)
-    testPeerTyping1Ties1Context |- interAsLocalTermFrom unit (Unit on (Peer "ps")) (interPeerApp (PeerInst 2)) \in Unit.
+    testPeerTyping1Ties1Context |- asLocalFrom unit (Unit on (Peer "ps")) (peerApp (PeerInst 2)) \in Unit.
 Proof.
   split.
   - reflexivity.
@@ -674,7 +524,7 @@ Example test_hasType_TAsLocalFrom_optional_1:
     getPeerType testPeerTyping1Ties1Context (PeerInst 3) = Some (Peer "po") /\
     getTieMult testPeerTyping1Ties1Context (Peer "p0", Peer "po") = Some optional /\
     (* actual test ... *)
-    testPeerTyping1Ties1Context |- interAsLocalTermFrom unit (Unit on (Peer "po")) (interPeerApp (PeerInst 3)) \in Unit.
+    testPeerTyping1Ties1Context |- asLocalFrom unit (Unit on (Peer "po")) (peerApp (PeerInst 3)) \in Unit.
 Proof.
   split.
   - reflexivity.
@@ -697,7 +547,7 @@ Example test_hasType_TAsLocalFrom_multiple_1:
     getPeerType testPeerTyping1Ties1Context (PeerInst 4) = Some (Peer "pm") /\
     getTieMult testPeerTyping1Ties1Context (Peer "p0", Peer "pm") = Some multiple /\
     (* actual test ... *)
-    testPeerTyping1Ties1Context |- interAsLocalTermFrom unit (Unit on (Peer "pm")) (interPeerApp (PeerInst 4)) \in Unit.
+    testPeerTyping1Ties1Context |- asLocalFrom unit (Unit on (Peer "pm")) (peerApp (PeerInst 4)) \in Unit.
 Proof.
   split.
   - reflexivity.
@@ -810,7 +660,7 @@ Example test_hasType_TCompFrom_single_1:
     (* actual test ... *)
     testPeerTyping1Ties1Context
       |- asLocalInFrom (Id "x") (*=*) unit (*in*) unit (*:*) (Unit on (Peer "ps"))
-                       (*from*) (interPeerApp (PeerInst 2))
+                       (*from*) (peerApp (PeerInst 2))
       \in Unit.
 Proof.
   split.
@@ -837,7 +687,7 @@ Example test_hasType_TCompFrom_single_2:
     testPeerTyping1Ties1Context
       |- asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x"))
                        (*:*) (Unit on (Peer "ps"))
-                       (*from*) (interPeerApp (PeerInst 2))
+                       (*from*) (peerApp (PeerInst 2))
       \in Unit.
 Proof.
   split.

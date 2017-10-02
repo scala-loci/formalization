@@ -107,20 +107,16 @@ Inductive t : Type :=
   | some   : t -> t
   | nil    : T -> t
   | cons   : t -> t -> t
-  | asLocal       : id -> S -> t
-  | asLocalFrom   : id -> S -> t -> t
+  | asLocal       : t -> S -> t 
+  | asLocalFrom   : t -> S -> t -> t
   | asLocalIn     : id -> t -> t -> S -> t
   | asLocalInFrom : id -> t -> t -> S -> t -> t
   | signal : t -> t
   | var    : t -> t
   | now    : t -> t
   | set    : t -> t -> t
-
-  (* May only occur as intermediate steps during evaluation. *)
-  | interPeerApp          : p -> t
-  | interRemoteApp        : r -> t
-  | interAsLocalTerm      : t -> S -> t
-  | interAsLocalTermFrom  : t -> S -> t -> t
+  | peerApp          : p -> t
+  | remoteApp        : r -> t
   
   (* Added to make testing easier. *)
   | tnat   : nat -> t.

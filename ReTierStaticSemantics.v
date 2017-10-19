@@ -97,10 +97,13 @@ Definition emptyContext := Context noPeers noTies emptyReactEnv emptyPlaceEnv em
     | Context _ _ _ _ _ p => p
     end.
 
-  Definition getTieMult (c: context) (p: P*P): (option multiplicity) :=
+  Definition getTies (c: context): Ties :=
     match c with
-    | Context _ ties _ _ _ _ => ties p
+    | Context _ ties _ _ _ _ => ties
     end.
+
+  Definition getTieMult (c: context) (p: P*P): (option multiplicity) :=
+    (getTies c) p.
 
   Definition getPeerType (c: context) (peerInst: p): (option P) :=
     match c with

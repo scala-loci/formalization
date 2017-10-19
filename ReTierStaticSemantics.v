@@ -166,19 +166,7 @@ Definition areTied (c: context) (p1 p2: P): bool :=
 
 (* TODO: implement rule T-Peer *)
 
-Inductive plt_isWellTyped : placementContext -> s -> Prop :=
-  | T_End:   forall plContext,
-      plContext |~ pUnit
-
-  | T_Place: forall plContext,
-             forall x T P t s,
-      (addPlVarDec x (T on P) plContext) |~ s ->
-      (plcToContext plContext P) |- t \in T ->
-      (plContext |~ (placed x (T on P) t s))
-
-where "plContext |~ s" := (plt_isWellTyped plContext s)
-
-  with  has_type : context -> t -> T -> Prop :=
+Inductive has_type : context -> t -> T -> Prop :=
   (* rules for local evaluation *)
       | T_Var:  forall context,
                   forall x T,
@@ -287,9 +275,24 @@ where "plContext |~ s" := (plt_isWellTyped plContext s)
             context |- t2 \in T ->
             context |- set t1 t2 \in Unit
 
+        | T_Nat:  forall context,
+                  forall n: nat,
+            context |- tnat n \in Tnat
+
 where "context '|-' t '\in' T" := (has_type context t T).
 
 
+Inductive plt_isWellTyped : placementContext -> s -> Prop :=
+  | T_End:   forall plContext,
+      plContext |~ pUnit
+
+  | T_Place: forall plContext,
+             forall x T P t s,
+      (addPlVarDec x (T on P) plContext) |~ s ->
+      (plcToContext plContext P) |- t \in T ->
+      (plContext |~ (placed x (T on P) t s))
+
+where "plContext |~ s" := (plt_isWellTyped plContext s).
 
 
 

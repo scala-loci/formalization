@@ -25,3 +25,47 @@ Require Coq.Lists.ListSet.
 (* --------------------------------------------------------------------- *)
 
 
+Fixpoint subst_t (id: id) (value: t) (term: t): t :=
+  match term with
+  | lambda id' type term =>
+    if beq_id id id'
+      then lambda id' type term
+      else lambda id' type (subst_t id value term)
+  | app term0 term1 => app (subst_t id value term0) (subst_t id value term1)
+  | idApp id' => if beq_id id id' then value else term
+  | unit => unit
+  | none type => none type
+  | some term => some (subst_t id value term)
+  | nil type => nil type
+  | cons term0 term1 => cons (subst_t id value term0) (subst_t id value term1)
+  | asLocal term type => asLocal (subst_t id value term) type
+  | asLocalFrom term0 type term1 => asLocalFrom (subst_t id value term0) type (subst_t id value term1)
+  | asLocalIn id' term0 term1 type =>
+    if beq_id id id'
+      then asLocalIn id' (subst_t id value term0) term1 type
+      else asLocalIn id' (subst_t id value term0) (subst_t id value term1) type
+  | asLocalInFrom id' term0 term1 type term2 =>
+    if beq_id id id'
+      then asLocalInFrom id' (subst_t id value term0) term1 type (subst_t id value term2)
+      else asLocalInFrom id' (subst_t id value term0) (subst_t id value term1) type (subst_t id value term2)
+  | signal term => signal (subst_t id value term)
+  | var term => var (subst_t id value term)
+  | now term => now (subst_t id value term)
+  | set term0 term1 => set (subst_t id value term0) (subst_t id value term1)
+  | peerApp peer => peerApp peer
+  | reactApp reactive => reactApp reactive
+  | tnat n => tnat n
+  end.
+
+Notation "[ id :=_t value ] term" := (subst_t id value term) (at level 40).
+
+Fixpoint subst_s (id: id) (value: t) (term: s): s :=
+  match term with
+  | placed id' type term0 term1 =>
+    if beq_id id id'
+      then placed id' type (subst_t id value term0) term1
+      else placed id' type (subst_t id value term0) (subst_s id value term1)
+  | pUnit => pUnit
+  end.
+
+Notation "[ id :=_s value ] term" := (subst_s id value term) (at level 40).

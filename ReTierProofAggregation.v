@@ -2,7 +2,7 @@ Require Import ReTierSyntax.
 Require Import ReTierStaticSemantics.
 Require Import ReTierDynamicSemantics.
 
-Lemma Aggregation_Multiple : forall
+Lemma aggregation_multiple : forall
     (c: context)
     (p0 p1 : P)
     (peers: Coq.Lists.ListSet.set p)
@@ -10,9 +10,9 @@ Lemma Aggregation_Multiple : forall
     (value: t)
     (value_type: T),
   getTieMult c (p0, p1) = Some multiple ->
-  has_type c value value_type ->
+  c |- value \in value_type ->
   Phi (getTies c) p0 p1 peers value value_type = Some term ->
-  has_type c term (List value_type).
+  c |- term \in (List value_type).
 Proof.
 intros c p0 p1 peers term value value_type.
 intros H_multiple H_value_type H_Phi_term.
@@ -49,7 +49,7 @@ induction peers as [| peer0 peers IH_peers ]; intros term H_Phi_term.
       reflexivity.
 Qed.
 
-Lemma Aggregation_Optional : forall
+Lemma aggregation_optional : forall
     (c: context)
     (p0 p1 : P)
     (peers: Coq.Lists.ListSet.set p)
@@ -57,9 +57,9 @@ Lemma Aggregation_Optional : forall
     (value: t)
     (value_type: T),
   getTieMult c (p0, p1) = Some optional ->
-  has_type c value value_type ->
+  c |- value \in value_type ->
   Phi (getTies c) p0 p1 peers value value_type = Some term ->
-  has_type c term (Option value_type).
+  c |- term \in (Option value_type).
 Proof.
 intros c p0 p1 peers term value value_type.
 intros H_multiple H_value_type H_Phi_term.
@@ -79,7 +79,7 @@ destruct peers.
     congruence.
 Qed.
 
-Lemma Aggregation_Single : forall
+Lemma aggregation_single : forall
     (c: context)
     (p0 p1 : P)
     (peers: Coq.Lists.ListSet.set p)
@@ -87,9 +87,9 @@ Lemma Aggregation_Single : forall
     (value: t)
     (value_type: T),
   getTieMult c (p0, p1) = Some single ->
-  has_type c value value_type ->
+  c |- value \in value_type ->
   Phi (getTies c) p0 p1 peers value value_type = Some term ->
-  has_type c term value_type.
+  c |- term \in value_type.
 Proof.
 intros c p0 p1 peers term value value_type.
 intros H_multiple H_value_type H_Phi_term.
@@ -108,7 +108,7 @@ destruct peers.
     congruence.
 Qed.
 
-Lemma Aggregation : forall
+Lemma aggregation : forall
     (c: context)
     (p0 p1 : P)
     (peers: Coq.Lists.ListSet.set p)
@@ -120,8 +120,8 @@ Lemma Aggregation : forall
   getTieMult c (p0, p1) <> Some mNone ->
   Phi (getTies c) p0 p1 peers value value_type = Some term ->
   phi c p0 p1 value_type = Some term_type ->
-  has_type c value value_type ->
-  has_type c term term_type.
+  c |- value \in value_type ->
+  c |- term \in term_type.
 Proof.
 intros c p0 p1 peers value value_type term term_type.
 intros H_tie0 H_tie1 H_Phi_term H_phi_term_type H_value_type.
@@ -130,9 +130,9 @@ case_eq (getTieMult c (p0, p1)).
   unfold phi in H_phi_term_type.
   rewrite H_tie in H_phi_term_type.
   destruct multiplicity; inversion H_phi_term_type as [ H_term_type ]; subst.
-  + eapply Aggregation_Multiple; eassumption.
-  + eapply Aggregation_Optional; eassumption.
-  + eapply Aggregation_Single; eassumption.
+  + eapply aggregation_multiple; eassumption.
+  + eapply aggregation_optional; eassumption.
+  + eapply aggregation_single; eassumption.
 - contradiction.
 Qed.
 

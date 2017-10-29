@@ -20,6 +20,42 @@ Proof. reflexivity. Qed.
 Example test_beq_id_2: beq_id (Id "x") (Id "y") = false.
 Proof. reflexivity. Qed.
 
+Lemma beq_id_eq : forall (x y: id), beq_id x y = true <-> x = y.
+Proof.
+intros.
+destruct x as [ x ], y as [ y ].
+simpl.
+case (String.string_dec x y); intros; split; congruence.
+Qed.
+
+Lemma beq_id_not_eq : forall (x y: id), beq_id x y = false <-> x <> y.
+Proof.
+intros.
+destruct x as [ x ], y as [ y ].
+simpl.
+case (String.string_dec x y); intros; split; congruence.
+Qed.
+
+Lemma beq_id_comm : forall (x y: id), beq_id x y = beq_id y x.
+Proof.
+intros.
+destruct x as [ x ], y as [ y ].
+simpl.
+case_eq (String.string_dec x y);
+  case_eq (String.string_dec y x);
+  intros;
+  subst;
+  reflexivity || contradiction.
+Qed.
+
+Lemma beq_id_refl : forall x, beq_id x x = true.
+Proof.
+intros.
+destruct x as [ x ].
+simpl.
+case (String.string_dec x x); intros; congruence || contradiction.
+Qed.
+
 
 (** peer instances **)
 Inductive p : Type :=

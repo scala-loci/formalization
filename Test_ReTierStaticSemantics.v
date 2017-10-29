@@ -16,10 +16,10 @@ Require Import ReTierSyntax.
 **)
 
 
-Definition testPsi1: reactEnv   := update (Id "r") Unit idEmpty.
-Definition testGamma1: varEnv   := update (Id "x") Tnat (update (Id "y") Unit idEmpty).
-Definition testDelta1: placeEnv := update (Id "x") (Unit on (Peer "px")) idEmpty.
-Definition testPlCont1_NoTies := PlacementContext noPeers noTies testGamma1 testDelta1.
+Definition testPsi1: reactEnv   := reactUpdate (Reactive 0) Unit reactEmpty.
+Definition testGamma1: varEnv   := idUpdate (Id "x") Tnat (idUpdate (Id "y") Unit idEmpty).
+Definition testDelta1: placeEnv := idUpdate (Id "x") (Unit on (Peer "px")) idEmpty.
+Definition testPlCont1_NoTies := PlacementContext noPeers noTies testPsi1 testDelta1.
 Definition testTies1  :=  (tie_update (Peer "p0" *-> Peer "pm")
                             (tie_update (Peer "p0" ?-> Peer "po")
                               (tie_update (Peer "p0" S-> Peer "ps")
@@ -66,7 +66,7 @@ Proof. apply T_Var. left. reflexivity. Qed.
 
 Example test_hasType_TVar_placedVar_2:
     (peToContext testDelta1 (Peer "px")) |- (idApp (Id "x")) \in Unit.
-Proof. apply T_Var. right. reflexivity. Qed.
+Proof. apply T_Var. right. split. - reflexivity. - reflexivity. Qed.
 
 
 Example test_hasType_TAbs_1: 
@@ -416,9 +416,9 @@ Qed.
 
 Example test_hasType_TReactive_1:
     (* ensure test setup is correct ... *)
-    getReactType testReactContext1 (Id "r") = Some Unit /\
+    getReactType testReactContext1 (Reactive 0) = Some Unit /\
     (* actual test ... *)
-    testReactContext1 |- (idApp (Id "r")) \in Unit.
+    testReactContext1 |- (reactApp (Reactive 0)) \in Unit.
 Proof.
   split.
   - reflexivity.
@@ -435,11 +435,19 @@ Proof. apply T_ReactiveVar. apply T_Unit. Qed.
 
 
 Example test_hasType_TNow_signal_1: emptyContext |- now (signal unit) \in Unit.
-Proof. apply T_Now. left. apply T_Signal. apply T_Unit. Qed.
+Proof.
+  apply T_Now with (T0 := Signal Unit).
+  - apply T_Signal. apply T_Unit.
+  - left. reflexivity.
+Qed.
 
 
 Example test_hasType_TNow_var_1: emptyContext |- now (var unit) \in Unit.
-Proof. apply T_Now. right. apply T_ReactiveVar. apply T_Unit. Qed.
+Proof.
+  eapply T_Now.
+  - apply T_ReactiveVar. apply T_Unit.
+  - right. reflexivity.
+Qed.
 
 
 Example test_hasType_TSet_1: emptyContext |- set (var unit) unit \in Unit.

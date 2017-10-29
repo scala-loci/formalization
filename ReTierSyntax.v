@@ -21,31 +21,6 @@ Example test_beq_id_2: beq_id (Id "x") (Id "y") = false.
 Proof. reflexivity. Qed.
 
 
-Definition idMap (V: Type) := partial_map id V.
-Definition idEmpty {V: Type} := p_empty id V.
-Definition update {V: Type} (k: id) (v: V) (m: idMap V): idMap V :=
-  p_update beq_id m k v.
-Definition pair_update {V: Type}  (z: id*V) (m: idMap V): idMap V :=
-  match z with
-  | (k, v) => update k v m
-  end.
-
-
-Example test_idEmpty_1: (@idEmpty nat) (Id "x") = None.
-Proof. reflexivity. Qed.
-
-Example test_update_1: (update (Id "x") 1 idEmpty) (Id "x") = Some 1. 
-Proof. reflexivity. Qed.
-Example test_update_2: (update (Id "x") 1 idEmpty) (Id "y") = None.  
-Proof. reflexivity. Qed.
-Example test_update_3: (update (Id "x") 2 (update (Id "x") 1 idEmpty) (Id "x")) = Some 2.
-Proof. reflexivity. Qed.
-Example test_update_4: (update (Id "y") 2 (update (Id "x") 1 idEmpty) (Id "x")) = Some 1.
-Proof. reflexivity. Qed.
-Example test_update_5: (update (Id "y") 2 (update (Id "x") 1 idEmpty) (Id "y")) = Some 2.
-Proof. reflexivity. Qed.
-
-
 (** peer instances **)
 Inductive p : Type :=
   | PeerInst: nat -> p.
@@ -71,9 +46,38 @@ Example test_beq_peer_2: beq_peerType (Peer "y") (Peer "x") = false.
 Proof. reflexivity. Qed.
 
 
-(** remote instances **)
+(** reactive instances **)
 Inductive r: Type :=
-  | remoteInst: nat -> r.
+  | Reactive: nat -> r.
+
+Definition beq_react (r1 r2: r): bool :=
+  match (r1, r2) with
+  | (Reactive x, Reactive y) => if Nat.eqb x y then true else false
+  end.
+
+Definition idMap (V: Type) := partial_map id V.
+Definition idEmpty {V: Type} := p_empty id V.
+Definition idUpdate {V: Type} (k: id) (v: V) (m: idMap V): idMap V :=
+  p_update beq_id m k v.
+
+Definition reactMap (V: Type) := partial_map r V.
+Definition reactEmpty {V: Type} := p_empty r V.
+Definition reactUpdate {V: Type} (k: r) (v: V) (m: reactMap V): reactMap V :=
+  p_update beq_react m k v.
+
+Example test_idEmpty_1: (@idEmpty nat) (Id "x") = None.
+Proof. reflexivity. Qed.
+
+Example test_update_1: (idUpdate (Id "x") 1 idEmpty) (Id "x") = Some 1. 
+Proof. reflexivity. Qed.
+Example test_update_2: (idUpdate (Id "x") 1 idEmpty) (Id "y") = None.  
+Proof. reflexivity. Qed.
+Example test_update_3: (idUpdate (Id "x") 2 (idUpdate (Id "x") 1 idEmpty) (Id "x")) = Some 2.
+Proof. reflexivity. Qed.
+Example test_update_4: (idUpdate (Id "y") 2 (idUpdate (Id "x") 1 idEmpty) (Id "x")) = Some 1.
+Proof. reflexivity. Qed.
+Example test_update_5: (idUpdate (Id "y") 2 (idUpdate (Id "x") 1 idEmpty) (Id "y")) = Some 2.
+Proof. reflexivity. Qed.
 
 
 (** types **)
@@ -116,7 +120,7 @@ Inductive t : Type :=
   | now    : t -> t
   | set    : t -> t -> t
   | peerApp          : p -> t
-  | remoteApp        : r -> t
+  | reactApp      : r -> t
   
   (* Added to make testing easier. *)
   | tnat   : nat -> t.

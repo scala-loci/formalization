@@ -6,8 +6,8 @@ Definition idMap :=
 *)
 
 (** Typing environment for reactives, named Psi in informal specification. **)
-Definition reactEnv := partial_map id T.
-Definition emptyReactEnv: reactEnv := idEmpty.
+Definition reactEnv := partial_map r T.
+Definition emptyReactEnv: reactEnv := reactEmpty.
 
 (** Typing environment for placed variables, named Delta in informal specification. **)
 
@@ -57,7 +57,7 @@ Definition emptyPlContext := PlacementContext noPeers noTies emptyReactEnv empty
 (** auxiliary functions for the manipulation of [placementContext] **)
 Definition addPlVarDec (x: id) (type: S) (plContext: placementContext): placementContext :=
   match plContext with
-  | PlacementContext pT t r pl => PlacementContext pT t r (update x type pl)
+  | PlacementContext pT t r pl => PlacementContext pT t r (idUpdate x type pl)
   end.
 
 
@@ -110,15 +110,15 @@ Definition emptyContext := Context noPeers noTies emptyReactEnv emptyPlaceEnv em
     | Context peerTyping _ _ _ _ _ => peerTyping peerInst
     end.
 
-  Definition getReactType (c: context) (r: id): (option T) :=
+  Definition getReactType (c: context) (react: r): (option T) :=
     match c with
-    | Context _ _ reactEnv _ _ _ => reactEnv r
+    | Context _ _ reactEnv _ _ _ => reactEnv react
     end.
 
 (** add variable declarations to context **)
   Definition addVarDec (x: id) (type: T) (cont: context): context :=
     match cont with
-    | Context pT t r pl vars p => Context pT t r pl (update x type vars) p
+    | Context pT t r pl vars p => Context pT t r pl (idUpdate x type vars) p
     end.
 
 
@@ -173,7 +173,9 @@ Inductive has_type : context -> t -> T -> Prop :=
   (* rules for local evaluation *)
       | T_Var:  forall context,
                   forall x T,
-            ((getVarEnv context) x = Some T \/ (getPlaceEnv context ) x = Some (T on (getPeer context))) ->
+            ((getVarEnv context) x = Some T \/
+             ((getVarEnv context) x = None) /\
+              (getPlaceEnv context) x = Some (T on (getPeer context))) ->
             context |- (idApp x) \in T
 
         | T_App:  forall context,
@@ -255,7 +257,7 @@ Inductive has_type : context -> t -> T -> Prop :=
         | T_Reactive: forall context,
                       forall r T,
             (getReactEnv context) r = Some T -> 
-            context |- (idApp r) \in T
+            context |- (reactApp r) \in T
 
         | T_Signal:   forall context,
                       forall t T,
@@ -268,9 +270,10 @@ Inductive has_type : context -> t -> T -> Prop :=
             context |- var t \in Var T
 
         | T_Now:  forall context,
-                  forall t T,
-            (context |- t \in Signal T \/ context |- t \in Var T) ->
-            context |- now t \in T
+                  forall t T1 T0,
+            (context |- t \in T0) ->
+            (T0 = Signal T1 \/ T0 = Var T1) ->
+            context |- now t \in T1
 
         | T_Set:  forall context,
                   forall t1 t2 T,

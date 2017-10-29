@@ -319,3 +319,31 @@ induction s; (intros; inversion H_typing; subst).
     right. assumption.
 - apply T_End.
 Qed.
+
+
+Lemma typable_empty_closed_t : forall typing ties Psi P t T,
+  Context typing ties Psi emptyPlaceEnv emptyVarEnv P |- t \in T ->
+  closed_t t.
+Proof.
+unfold closed_t, not.
+intros until T.
+intros H_typing x H_free_x.
+eapply free_in_context_t in H_free_x; try eassumption.
+unfold emptyVarEnv, emptyPlaceEnv, idEmpty, Maps.p_empty in H_free_x.
+inversion H_free_x.
+destruct H; congruence.
+Qed.
+
+
+Lemma typable_empty_closed_s : forall typing ties Psi s,
+  PlacementContext typing ties Psi emptyPlaceEnv |~ s ->
+  closed_s s.
+Proof.
+unfold closed_t, not.
+intros until s.
+intros H_typing x H_free_x.
+eapply free_in_context_s in H_free_x; try eassumption.
+unfold emptyPlaceEnv, idEmpty, Maps.p_empty in H_free_x.
+inversion H_free_x.
+congruence.
+Qed.

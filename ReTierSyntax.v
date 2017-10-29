@@ -230,3 +230,45 @@ Proof. reflexivity. Qed.
 Inductive program : Type :=
   | Prog : peerTyping -> Ties -> s -> program.
 
+
+Fixpoint appears_free_in_t x t : Prop :=
+  match t with
+  | lambda x' type t => if beq_id x x' then False else appears_free_in_t x t
+  | app t0 t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
+  | idApp x' => if beq_id x x' then True else False
+  | unit => False
+  | none type => False
+  | some t => appears_free_in_t x t
+  | nil type => False
+  | cons t0 t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
+  | asLocal t type => appears_free_in_t x t
+  | asLocalFrom t0 type t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
+  | asLocalIn x' t0 t1 type =>
+    if beq_id x x'
+      then appears_free_in_t x t0
+      else appears_free_in_t x t0 \/ appears_free_in_t x t1
+  | asLocalInFrom x' t0 t1 type t2 =>
+    if beq_id x x'
+      then appears_free_in_t x t0 \/ appears_free_in_t x t2
+      else appears_free_in_t x t0 \/ appears_free_in_t x t1 \/ appears_free_in_t x t2
+  | signal t => appears_free_in_t x t
+  | var t => appears_free_in_t x t
+  | now t => appears_free_in_t x t
+  | set t0 t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
+  | peerApp peer => False
+  | reactApp reactive => False
+  | tnat n => False
+  end.
+
+Fixpoint appears_free_in_s x s : Prop :=
+  match s with
+  | placed x' type s0 t0 =>
+    if beq_id x x'
+      then appears_free_in_t x s0
+      else appears_free_in_t x s0 \/ appears_free_in_s x t0
+  | pUnit => False
+  end.
+
+Definition closed_t t := forall x, ~ appears_free_in_t x t.
+
+Definition closed_s s := forall x, ~ appears_free_in_s x s.

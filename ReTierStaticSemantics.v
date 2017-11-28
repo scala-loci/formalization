@@ -121,6 +121,16 @@ Definition emptyContext := Context noPeers noTies emptyReactEnv emptyPlaceEnv em
     | Context pT t r pl vars p => Context pT t r pl (idUpdate x type vars) p
     end.
 
+  Definition remoteContext (p: P) (cont: context): context :=
+    match cont with
+    | Context pT t r pl vars _ => Context pT t r pl emptyVarEnv p
+    end.
+
+  Definition remoteContextWithBinding (p: P) (x: id) (type: T) (cont: context): context :=
+    match cont with
+    | Context pT t r pl vars _ => Context pT t r pl (idUpdate x type emptyVarEnv) p
+    end.
+
 
 (** conversions from partial data to full [context] **)
   Definition plcToContext (plContext: placementContext) (currentPeer: P): context :=
@@ -222,7 +232,7 @@ Inductive has_type : context -> t -> T -> Prop :=
         | T_AsLocal: forall context,
                      forall P0 P1 t T0 T1,
             (P0 = (getPeer context)) ->   (* just for better readability *)
-            context |- t \in T1 ->
+            (remoteContext P1 context) |- t \in T1 ->
             (areTied context P0 P1) = true ->
             (phi context P0 P1 T1) = Some T0 ->
             context |- (asLocal t (T1 on P1)) \in T0
@@ -230,7 +240,7 @@ Inductive has_type : context -> t -> T -> Prop :=
         | T_AsLocalFrom: forall context,
                          forall P0 P1 t0 t1 T,
             (P0 = (getPeer context)) ->   (* just for better readability *)
-            context |- t0 \in T ->
+            (remoteContext P1 context) |- t0 \in T ->
             (areTied context P0 P1) = true ->
             context |- t1 \in Remote P1 ->
             context |- asLocalFrom t0 (T on P1) t1 \in T
@@ -239,7 +249,7 @@ Inductive has_type : context -> t -> T -> Prop :=
                   forall x t0 t1 T0 T1 T2 P0 P1,
             (P0 = (getPeer context)) ->   (* just for better readability *)
             context |- t0 \in T0 ->
-            (addVarDec x T0 context) |- t1 \in T1 ->
+            (remoteContextWithBinding P1 x T0 context) |- t1 \in T1 ->
             (areTied context P0 P1) = true ->
             Some T2 = (phi context P0 P1 T1) ->
             context |- asLocalIn x t0 t1 (T1 on P1) \in T2
@@ -248,7 +258,7 @@ Inductive has_type : context -> t -> T -> Prop :=
                       forall x t0 t1 t2 T0 T1 P0 P1,
             (P0 = (getPeer context)) ->   (* just for better readability *)
             context |- t0 \in T0 ->
-            (addVarDec x T0 context) |- t1 \in T1 ->
+            (remoteContextWithBinding P1 x T0 context) |- t1 \in T1 ->
             (areTied context P0 P1) = true ->
             context |- t2 \in Remote P1 ->
             context |- asLocalInFrom x t0 t1 (T1 on P1) t2 \in T1

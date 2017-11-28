@@ -287,6 +287,7 @@ Inductive has_type : context -> t -> T -> Prop :=
 
 where "context '|-' t '\in' T" := (has_type context t T).
 
+Hint Constructors has_type.
 
 Inductive plt_isWellTyped : placementContext -> s -> Prop :=
   | T_End:   forall plContext,

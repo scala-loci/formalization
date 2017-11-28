@@ -87,11 +87,11 @@ Definition pISet_mem (x: p) (s: peerInsts): bool :=
 
 
 
-
 Inductive reactiveSystem : Type :=
-  | ReactiveSystem: ListSet.set t -> partial_map t t -> reactiveSystem.
+  | ReactiveSystem: r -> ListSet.set r -> reactMap t -> reactiveSystem.
 
-Definition emptyReactSys := ReactiveSystem (ListSet.empty_set t) (p_empty t t).
+Definition emptyReactSys := ReactiveSystem (Reactive 0) (ListSet.empty_set r) (reactEmpty).
+
 
 
 
@@ -123,47 +123,40 @@ Definition getReactSys (context: leContext): reactiveSystem :=
 
 (* TODO: replace by lemma and prove it *)
 Hypothesis term_eq_dec : forall x y:t, {x = y} + {x <> y}.
+(* TODO: replace by lemma and prove it *)
+Hypothesis react_eq_dec : forall x y:r, {x = y} + {x <> y}.
 
-Definition reactDomainMem (x: t) (sys: reactiveSystem): bool :=
+
+Definition reactDomainMem (x: r) (sys: reactiveSystem): bool :=
   match sys with
-  | ReactiveSystem dom _ => ListSet.set_mem term_eq_dec x dom
+  | ReactiveSystem _ dom _ => ListSet.set_mem react_eq_dec x dom
   end.
 
-Definition reactSysAdd (r val: t) (sys: reactiveSystem): reactiveSystem :=
-  match sys with
-  | ReactiveSystem dom map  => ReactiveSystem (ListSet.set_add term_eq_dec r dom)
-                                              (p_update beq_t map r val)
+
+
+
+(* no distinction here between allocation of signals and vars *)
+Definition reactAlloc (t: t) (rho: reactiveSystem): r * reactiveSystem :=
+  match rho with
+  | ReactiveSystem nextReact dom map
+    => match nextReact with
+       | Reactive n => (nextReact,
+                        ReactiveSystem (Reactive (n+1))
+                                       (ListSet.set_add react_eq_dec nextReact dom)
+                                       (reactUpdate nextReact t map))
+      end
   end.
 
-Definition reactGet (sys: reactiveSystem) (r: t): option t :=
-  match sys with
-  | ReactiveSystem _ map => map r
+Definition updateVar (r: r) (v: t) (rho: reactiveSystem): reactiveSystem :=
+  match rho with
+  | ReactiveSystem next dom map => ReactiveSystem next dom
+                                                  (reactUpdate r v map)
   end.
 
-Inductive reactiveOp: Type :=
-  | allocSignal: t -> reactiveSystem -> reactiveOp
-  | allocVar: t -> reactiveSystem -> reactiveOp
-  | currentValue: t -> reactiveSystem -> reactiveOp
-  | updateVar: t -> t -> reactiveSystem -> reactiveOp.
-
-Reserved Notation "reactOp 'r=' '(' r ',' reactSys ')'" (at level 20).
-Inductive reactiveStep : reactiveOp -> t -> reactiveSystem -> Prop :=
-  | R_Signal: forall t rho r rho',
-        reactDomainMem r rho = false ->
-        rho' = reactSysAdd r t rho ->
-        allocSignal t rho r= (r, rho')
-  | R_Var: forall v rho r rho',
-        reactDomainMem r rho = false ->
-        rho' = reactSysAdd r v rho ->
-        allocVar v rho r= (r, rho')
-  | R_Retrieval: forall r rho t,
-        Some t = reactGet rho r ->
-        currentValue r rho r= (t, rho)
-  | R_Update: forall r v rho rho',
-        rho' = reactSysAdd r v rho ->
-        updateVar r v rho r= (unit, rho')
-
-where "reactOp 'r=' '(' r ',' reactSys ')'" := (reactiveStep reactOp r reactSys).
+Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSystem :=
+  match rho with
+  | ReactiveSystem _ _ map => (map r, rho)
+  end.
 
 
 (* ...just a little reminder
@@ -191,7 +184,7 @@ where "reactOp 'r=' '(' r ',' reactSys ')'" := (reactiveStep reactOp r reactSys)
     (* Added to make testing easier. *)
     | tnat   : nat -> t.
 *)
-Reserved Notation "'[' x ':=' s ']' tm" (at level 20).
+Reserved Notation "'[' x ':=' s ']' tm" (at level 40).
 
 Fixpoint subst (x:id) (s tm: t): t :=
   match tm with
@@ -218,145 +211,82 @@ Fixpoint subst (x:id) (s tm: t): t :=
   | now t => now (subst x s t)
   | set t1 t2 => set (subst x s t1) (subst x s t2)
   | peerApp p => peerApp p
-  | remoteApp r => remoteApp r
+  | reactApp r => reactApp r
   | tnat n => tnat n    (*TODO: remove tnat *)
   end
 where "'[' x ':=' s ']' tm" := (subst x s tm).
 
 
 
+Inductive either (a b: Type) :=
+  | Left:  a -> either a b
+  | Right: b -> either a b.
 
 (** Notation for local evaluation. **)
 (*Reserved Notation "context '|>' t1 'L==>' t2" (at level 40).*)
-Reserved Notation "context '|>' t1 'L==>' t2 ',' rho" (at level 45).
+Reserved Notation "context '||>' t1 'Ld==>' t2 ',' rho" (at level 50).
 
-(* TODO:  Let (LeContext insts PeerType pTyping) be the context given as first
-          argument for this Prop.
-          Check in all relevants rules if all elements of 'insts' have type
-          'PeerType' according to 'peerTyping'.
-*)
-(* TODO:  Add reactive context to Prop and rules. *)
 
-(* reminder
-  Inductive leContext: Type :=
-  | LeContext: peerTyping -> peerInsts -> P -> leContext.
-*)
-Inductive localStep : leContext -> t -> t -> reactiveSystem -> Prop :=
+Inductive localStep : leContext -> t -> (either r t) -> reactiveSystem -> Prop :=
   (* E_Context *)
   | E_App: forall context x T t v,
-        context |> (app (lambda x T t) v) L==> [x := v] t, getReactSys context
+        (* context ||> (app (lambda x T t) v) Ld==> Right _ _ ([x := v] t), getReactSys context *)
+        (* substitution 'subst' replaced by 'subst_t' *)
+        context ||> (app (lambda x T t) v) Ld==> Right _ _ ([x :=_t v] t), getReactSys context
 
   (* remote access *)
   | E_AsLocal: forall context peers ties P0 P1 v v' T _x _y _z,
         context = LeContext ties _x _y P0 _z ->
         peers = getPeerInstancesOfType context P1 ->
         Some v' = Phi ties P0 P1 peers v T ->
-        context |> (asLocal v (*:*) (T on P1)) L==> v', getReactSys context
+        context ||> (asLocal v (*:*) (T on P1)) Ld==> Right _ _ v', getReactSys context
 
   | E_Comp: forall context x v t T P1,
-        context |> (asLocalIn x (*=*) v (*in*) t (*:*) (T on P1))
-        L==> (asLocal ([x := v] t) (*:*) (T on P1)), getReactSys context
+        context ||> (asLocalIn x (*=*) v (*in*) t (*:*) (T on P1))
+          (* Ld==> Right _ _ (asLocal ([x := v] t) (*:*) (T on P1)), getReactSys context *)
+          (* substitution 'subst' replaced by 'subst_t' *)
+          Ld==> Right _ _ (asLocal ([x :=_t v] t) (*:*) (T on P1)), getReactSys context
 
-  (* TODO: write tests *)
   | E_Remote: forall context t t' T P1 context' ties typing peers P0 _x,
         context = LeContext ties typing peers P0 _x ->
         context' = LeContext ties typing peers P1 _x ->
-        context' |> t L==> t', getReactSys context  ->
-        context |> asLocal t (*:*) (T on P1) L==> asLocal t' (*:*) (T on P1), getReactSys context
+        context' ||> t Ld==> Right _ _ t', getReactSys context  ->
+        context ||> asLocal t (*:*) (T on P1) Ld==> Right _ _ (asLocal t' (*:*) (T on P1)), getReactSys context
 
   | E_AsLocalFrom: forall context v T P1 p,
-        context |> asLocalFrom v (*:*) (T on P1) (*from*) p L==> v, getReactSys context
+        context ||> asLocalFrom v (*:*) (T on P1) (*from*) p Ld==> Right _ _ v, getReactSys context
 
   | E_CompFrom: forall context x v t S p,
-        context |> asLocalInFrom x (*=*) v (*in*) t (*:*) S (*from*) p
-        L==> asLocalFrom ([x := v] t) (*:*) S (*from*) p, getReactSys context
+        context ||> asLocalInFrom x (*=*) v (*in*) t (*:*) S (*from*) p
+          (* Ld==> Right _ _ (asLocalFrom ([x := v] t) (*:*) S (*from*) p), getReactSys context *)
+          (* substitution 'subst' replaced by 'subst_t' *)
+          Ld==> Right _ _ (asLocalFrom ([x :=_t v] t) (*:*) S (*from*) p), getReactSys context
 
-  (* TODO: write tests *)
   | E_RemoteFrom: forall context t t' T P1 p context' ties typing peers P0 _x,
         context = LeContext ties typing peers P0 _x ->
         context' = LeContext ties typing peers P1 _x ->
-        context' |> t L==> t', getReactSys context  ->
-        context |> asLocalFrom t (*:*) (T on P1) (*from*) p L==> asLocalFrom t' (*:*) (T on P1) (*from*) p, getReactSys context
+        context' ||> t Ld==> Right _ _ t', getReactSys context  ->
+        context ||> asLocalFrom t (*:*) (T on P1) (*from*) p
+          Ld==> Right _ _ (asLocalFrom t' (*:*) (T on P1) (*from*) p), getReactSys context
 
   (* reactive rules *)
-  | E_ReactiveVar: forall context v r rho rho' ,
-        rho = getReactSys context ->
-        (allocVar v rho) r= (r, rho') ->
-        context |> var v L==> r, getReactSys context
+  | E_ReactiveVar: forall context v r rho',
+        (r, rho') = reactAlloc v (getReactSys context) ->
+        context ||> var v Ld==> Left _ _ r, rho'
+  | E_Signal: forall context t r rho',
+        (r, rho') = reactAlloc t (getReactSys context) ->
+        context ||> signal t Ld==> Left _ _ r, rho'
+  | E_Set: forall context v r rho',
+        rho' = updateVar r v (getReactSys context) ->
+        context ||> (set (reactApp r) (*:=*) v) Ld==> Right _ _ unit, rho'
+  | E_Now: forall context t r rho',
+        (Some t, rho') = currentValue r (getReactSys context) ->
+        context ||> now (reactApp r) Ld==> Right _ _ t, rho'
 
-  | E_Signal: forall context t r rho rho',
-        allocSignal t rho r= (r, rho') ->
-        context |> signal t L==> r, rho'
+where "context '||>' t1 'Ld==>' t2 ',' rho" := (localStep context t1 t2 (getReactSys context)).
 
-  | E_Set: forall context r v rho rho',
-        updateVar r v rho r= (unit, rho') ->
-        context |> set r (*:=*) v L==> unit, rho'
-
-  | E_Now: forall context r t rho rho',
-        currentValue r rho r= (t, rho') ->
-        context |> now r L==> t, rho'
-
-where "context '|>' t1 'L==>' t2 ',' rho" := (localStep context t1 t2 (getReactSys context)).
-
-Notation "context '|>' t1 'L==>' t2" := (context |> t1 L==> t2, getReactSys context) (at level 40).
+Notation "context '|>' t1 'L==>' t2" := (context ||> t1 Ld==> t2, getReactSys context) (at level 40).
 
 
-Definition testTies1  :=  (tie_update (Peer "p0" *-> Peer "pm")
-                            (tie_update (Peer "p0" ?-> Peer "po")
-                              (tie_update (Peer "p0" S-> Peer "ps")
-                                (tie_update ((Peer "p0") N-> (Peer "pn"))
-                                  noTies)))).
-Definition testPeerTyping1 := (pT_update (PeerInst 4) (Peer "pm")
-                                (pT_update (PeerInst 3) (Peer "po")
-                                  (pT_update (PeerInst 2) (Peer "ps")
-                                    (pT_update (PeerInst 1) (Peer "pn")
-                                      (pT_update (PeerInst 0) (Peer "p0")
-                                      noPeers))))).
-Definition testPeerInsts1 := (pISet_add (PeerInst 4)
-                                (pISet_add (PeerInst 3)
-                                  (pISet_add (PeerInst 2)
-                                    (pISet_add (PeerInst 1)
-                                      (pISet_add (PeerInst 0)
-                                        noPeerInsts))))).
-Definition testTies1Context := LeContext testTies1 testPeerTyping1 testPeerInsts1 (Peer "p0") emptyReactSys.
-
-Example testLocalStep_EApp_1:
-  emptyLeContext |> (app (lambda (Id "x") (Option Unit) (unit)) (some unit)) L==> unit.
-Proof. apply E_App. Qed.
-
-Example testLocalStep_EApp_2:
-  emptyLeContext |> (app (lambda (Id "x") (Option Unit) (idApp (Id "x")))) (some unit) L==> (some unit).
-Proof. apply E_App. Qed.
-
-
-Example testLocalStep_EAsLocal_1:
-  testTies1Context |> (asLocal unit (*:*) (Unit on (Peer "ps"))) L==> unit.
-Proof.
-  eapply E_AsLocal.
-  - reflexivity.
-  - reflexivity.
-  - reflexivity.
-Qed.
-
-
-Example testLocalStep_EComp_1:
-  testTies1Context |> asLocalIn (Id "x") (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps"))
-  L==> asLocal unit (*:*) (Unit on (Peer "ps")).
-Proof. apply E_Comp. Qed.
-
-
-Example testLocalStep_EAsLocalFrom_1:
-  testTies1Context |> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))
-  L==> unit.
-Proof. apply E_AsLocalFrom. Qed.
-
-
-Example testLocalStep_ECompFrom_1:
-  testTies1Context |> asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))
-  L==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)).
-Proof. apply E_CompFrom. Qed.
-
-
-
-
-
+Hint Constructors localStep.
+  

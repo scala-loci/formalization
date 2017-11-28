@@ -117,7 +117,7 @@ Proof. reflexivity. Qed.
 
 Definition beq_r (a b: r): bool :=
   match (a, b) with
-  | (remoteInst an, remoteInst bn) => Nat.eqb an bn
+  | (Reactive an, Reactive bn) => Nat.eqb an bn
   end.
 
 
@@ -208,7 +208,7 @@ Fixpoint beq_t (a b: t): bool :=
   | (now at1, now bt1)            => beq_t at1 bt1
   | (set at1 at2, set bt1 bt2)    => (beq_t at1 bt1) && (beq_t at2 bt2)
   | (peerApp ap, peerApp bp)      => beq_peerInst ap bp
-  | (remoteApp ar, remoteApp br)  => beq_r ar br
+  | (reactApp ar, reactApp br)  => beq_r ar br
   | (tnat an, tnat bn)            => Nat.eqb an bn
   | _                             => false
   end.

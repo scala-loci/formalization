@@ -2,6 +2,29 @@ Require Import ReTierSyntax.
 Require Import ReTierStaticSemantics.
 
 
+Lemma transmittable_value_typing : forall typing ties Psi Delta Delta' Gamma Gamma' P P' t T,
+  transmittable_value t ->
+  Context typing ties Psi Delta Gamma P |- t \in T ->
+  Context typing ties Psi Delta' Gamma' P' |- t \in T.
+Proof.
+intros until T.
+intros H_transmittable H_typing.
+generalize dependent T.
+induction H_transmittable; intros; inversion H_typing.
+- apply T_Unit.
+- apply T_None.
+- apply T_Some.
+  apply IHH_transmittable. assumption.
+- apply T_Nil.
+- apply T_Cons.
+  + apply IHH_transmittable1. assumption.
+  + apply IHH_transmittable2. assumption.
+- apply T_Peer. assumption.
+- apply T_Reactive. assumption.
+- apply T_Nat.
+Qed.
+
+
 Lemma free_in_context_t : forall typing ties Psi Delta Gamma P t T x,
    appears_free_in_t x t ->
    Context typing ties Psi Delta Gamma P |- t \in T ->

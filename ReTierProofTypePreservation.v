@@ -1,6 +1,7 @@
 Require Import ReTierSyntax.
 Require Import ReTierStaticSemantics.
 Require Import ReTierDynamicSemantics.
+Require Import ReTierProofContext.
 Require Import ReTierProofSubstitution.
 Require Import ReTierProofAggregation.
 
@@ -66,6 +67,49 @@ Lemma preservation_nonReactive: forall t t' T statContext dynContext,
     exists T',
     statContext |- t' \in T'.
 *)
+
+Lemma preservation_nonReactive: forall t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys,
+  Context typing ties reactEnv placeEnv varEnv P |- t \in T -> 
+  LeContext ties typing peerInsts P reactSys |> t L==> Right _ _ t' ->
+  Context typing ties reactEnv placeEnv varEnv P |- t' \in T.
+Proof.
+intros t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys.
+intros H_stat H_dyn.
+generalize dependent P.
+generalize dependent T.
+generalize dependent t'.
+generalize dependent varEnv.
+induction t.
+
+1-8: admit.
+
+- intros varEnv t' T P H_stat H_dyn.
+  inversion H_stat.
+  subst.
+
+  apply tied_not_None in H5 as H2.
+  apply tied_not_SomeMNone in H5 as H4.
+  inversion H_dyn.
+  + inversion H10.
+    apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := t) (v_type := T1); subst.
+    * apply H2.
+    * apply H4.
+    * unfold getTies. symmetry. assumption.
+    * assumption.
+    * assumption.
+    * eapply transmittable_value_typing in H3; eassumption.
+  + inversion H10.
+    subst.
+    eapply T_AsLocal.
+    * assumption.
+    * reflexivity.
+    * apply IHt; assumption.
+    * assumption.
+    * assumption.
+
+
+
+(*
 (* stronger formulation *)
 Lemma preservation_nonReactive: forall t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys,
     Context typing ties reactEnv placeEnv varEnv P |- t \in T -> 
@@ -153,3 +197,4 @@ apply T_AsLocal with (P0 := P).
     2,3: simpl; assumption.
     
     Abort.
+*)

@@ -365,12 +365,12 @@ Definition testTies1Context := LeContext testTies1 testPeerTyping1 testPeerInsts
 
 Example testLocalStep_EApp_1:
   emptyLeContext |> (app (lambda (Id "x") (Option Unit) (unit)) (some unit)) L==> Right _ _ unit.
-Proof. apply E_App. Qed.
+Proof. apply E_App, v_some, v_unit. Qed.
 
 Example testLocalStep_EApp_2:
   emptyLeContext |> (app (lambda (Id "x") (Option Unit) (idApp (Id "x")))) (some unit)
     L==> Right _ _ (some unit).
-Proof. apply E_App. Qed.
+Proof. apply E_App, v_some, v_unit. Qed.
 
 
 Example testLocalStep_EAsLocal_1:
@@ -378,6 +378,7 @@ Example testLocalStep_EAsLocal_1:
 Proof.
   eapply E_AsLocal.
   - reflexivity.
+  - apply w_unit.
   - reflexivity.
   - reflexivity.
 Qed.
@@ -386,7 +387,7 @@ Qed.
 Example testLocalStep_EComp_1:
   testTies1Context |> asLocalIn (Id "x") (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps"))
     L==> Right _ _ (asLocal unit (*:*) (Unit on (Peer "ps"))).
-Proof. apply E_Comp. Qed.
+Proof. apply E_Comp, w_unit. Qed.
 
 
 Example testLocalStep_ERemote_1:
@@ -396,20 +397,20 @@ Proof.
   eapply E_Remote.
   - reflexivity.
   - reflexivity.
-  - apply E_App.
+  - apply E_App, v_some, v_unit.
 Qed.
 
 
 Example testLocalStep_EAsLocalFrom_1:
   testTies1Context |> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))
     L==> Right _ _ unit.
-Proof. apply E_AsLocalFrom. Qed.
+Proof. apply E_AsLocalFrom, w_unit. Qed.
 
 
 Example testLocalStep_ECompFrom_1:
   testTies1Context |> asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))
     L==> Right _ _ (asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))).
-Proof. apply E_CompFrom. Qed.
+Proof. apply E_CompFrom, w_unit. Qed.
 
 
 Example testLocalStep_ERemoteFrom_1:
@@ -419,7 +420,7 @@ Proof.
   eapply E_RemoteFrom.
   - reflexivity.
   - reflexivity.
-  - apply E_App.
+  - apply E_App, v_some, v_unit.
 Qed.
   
 
@@ -442,7 +443,9 @@ Example testLocalStep_EReactiveVar_1:
 Proof.
   split.
   - reflexivity.
-  - eapply E_ReactiveVar. reflexivity.
+  - eapply E_ReactiveVar.
+    + reflexivity.
+    + apply v_some, v_unit.
 Qed.
 
 
@@ -470,7 +473,9 @@ Proof.
   - reflexivity.
   - split.
     + reflexivity.
-    + eapply E_Set. reflexivity.
+    + eapply E_Set.
+      * reflexivity.
+      * apply v_none.
 Qed.
 
 

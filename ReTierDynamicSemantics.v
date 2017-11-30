@@ -232,16 +232,19 @@ Inductive localStep : leContext -> t -> (either r t) -> reactiveSystem -> Prop :
   | E_App: forall context x T t v,
         (* context ||> (app (lambda x T t) v) Ld==> Right _ _ ([x := v] t), getReactSys context *)
         (* substitution 'subst' replaced by 'subst_t' *)
+        value v ->
         context ||> (app (lambda x T t) v) Ld==> Right _ _ ([x :=_t v] t), getReactSys context
 
   (* remote access *)
   | E_AsLocal: forall context peers ties P0 P1 v v' T _x _y _z,
         context = LeContext ties _x _y P0 _z ->
+        transmittable_value v ->
         peers = getPeerInstancesOfType context P1 ->
         Some v' = Phi ties P0 P1 peers v T ->
         context ||> (asLocal v (*:*) (T on P1)) Ld==> Right _ _ v', getReactSys context
 
   | E_Comp: forall context x v t T P1,
+        transmittable_value v ->
         context ||> (asLocalIn x (*=*) v (*in*) t (*:*) (T on P1))
           (* Ld==> Right _ _ (asLocal ([x := v] t) (*:*) (T on P1)), getReactSys context *)
           (* substitution 'subst' replaced by 'subst_t' *)
@@ -254,9 +257,11 @@ Inductive localStep : leContext -> t -> (either r t) -> reactiveSystem -> Prop :
         context ||> asLocal t (*:*) (T on P1) Ld==> Right _ _ (asLocal t' (*:*) (T on P1)), getReactSys context
 
   | E_AsLocalFrom: forall context v T P1 p,
+        transmittable_value v ->
         context ||> asLocalFrom v (*:*) (T on P1) (*from*) p Ld==> Right _ _ v, getReactSys context
 
   | E_CompFrom: forall context x v t S p,
+        transmittable_value v ->
         context ||> asLocalInFrom x (*=*) v (*in*) t (*:*) S (*from*) p
           (* Ld==> Right _ _ (asLocalFrom ([x := v] t) (*:*) S (*from*) p), getReactSys context *)
           (* substitution 'subst' replaced by 'subst_t' *)
@@ -272,12 +277,14 @@ Inductive localStep : leContext -> t -> (either r t) -> reactiveSystem -> Prop :
   (* reactive rules *)
   | E_ReactiveVar: forall context v r rho',
         (r, rho') = reactAlloc v (getReactSys context) ->
+        value v ->
         context ||> var v Ld==> Left _ _ r, rho'
   | E_Signal: forall context t r rho',
         (r, rho') = reactAlloc t (getReactSys context) ->
         context ||> signal t Ld==> Left _ _ r, rho'
   | E_Set: forall context v r rho',
         rho' = updateVar r v (getReactSys context) ->
+        value v ->
         context ||> (set (reactApp r) (*:=*) v) Ld==> Right _ _ unit, rho'
   | E_Now: forall context t r rho',
         (Some t, rho') = currentValue r (getReactSys context) ->

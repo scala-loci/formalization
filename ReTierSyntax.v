@@ -183,6 +183,37 @@ Inductive t : Type :=
   (* Added to make testing easier. *)
   | tnat   : nat -> t.
 
+(** values **)
+Inductive value : t -> Prop :=
+  | v_lambda : forall x T t, value (lambda x T t)
+  | v_unit : value unit
+  | v_none : forall T, value (none T)
+  | v_some : forall t, value t -> value (some t)
+  | v_nil : forall T, value (nil T)
+  | v_cons : forall t0 t1, value t0 -> value t1 -> value (cons t0 t1)
+  | v_peerApp : forall p, value (peerApp p)
+  | v_reactApp : forall r, value (reactApp r)
+  | v_tnat : forall n, value (tnat n).
+
+Inductive transmittable_value : t -> Prop :=
+  | w_unit : transmittable_value unit
+  | w_none : forall T, transmittable_value (none T)
+  | w_some : forall t, transmittable_value t -> transmittable_value (some t)
+  | w_nil : forall T, transmittable_value (nil T)
+  | w_cons : forall t0 t1, transmittable_value t0 -> transmittable_value t1 -> transmittable_value (cons t0 t1)
+  | w_peerApp : forall p, transmittable_value (peerApp p)
+  | w_reactApp : forall r, transmittable_value (reactApp r)
+  | w_tnat : forall n, transmittable_value (tnat n).
+
+Inductive transmittable_type : T -> Prop :=
+  | U_Unit : transmittable_type Unit
+  | U_Option : forall T, transmittable_type T -> transmittable_type (Option T)
+  | U_List : forall T, transmittable_type T -> transmittable_type (List T)
+  | U_Remote : forall P, transmittable_type (Remote P)
+  | U_Signal : forall T, transmittable_type T -> transmittable_type (Signal T)
+  | U_Var : forall T, transmittable_type T -> transmittable_type (Var T)
+  | U_Tnat : transmittable_type Tnat.
+
 
 Fixpoint beq_t (a b: t): bool :=
   match (a, b) with

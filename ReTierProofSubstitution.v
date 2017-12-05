@@ -4,41 +4,95 @@ Require Import ReTierDynamicSemantics.
 Require Import ReTierProofContext.
 
 
-Lemma substitution_t_gamma:
-  forall typing ties Psi Delta Gamma P x t T v U,
-  Context typing ties Psi Delta (idUpdate x U Gamma) P |- t \in T ->
-  Context typing ties Psi emptyPlaceEnv emptyVarEnv P |- v \in U ->
+Lemma substitution_t_generalized:
+  forall typing ties Psi Delta Gamma P P' x t T v U,
+  (Gamma x = None /\
+   (Delta x = None \/ Delta x = Some (U on P')) /\
+   Context typing ties Psi Delta Gamma P |- t \in T /\
+   Context typing ties Psi emptyPlaceEnv emptyVarEnv P' |- v \in U) \/
+  (Context typing ties Psi Delta (idUpdate x U Gamma) P |- t \in T /\
+   Context typing ties Psi emptyPlaceEnv emptyVarEnv P |- v \in U) ->
   Context typing ties Psi Delta Gamma P |- [x :=_t v] t \in T.
 Proof.
 intros until U.
-intros H_typing_t H_typing_v.
+intros H_typing.
 generalize dependent Gamma.
 generalize dependent T.
-induction t; (intros; inversion H_typing_t; subst; simpl).
-- case_eq (beq_id x i); intros H_eq_x.
+generalize dependent U.
+generalize dependent P.
+generalize dependent P'.
+induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
+   [ destruct
+       H_typing as [ H_Gamma H_typing ],
+       H_typing as [ H_Delta H_typing ],
+       H_typing as [ H_typing H_typing_v ] |
+     destruct
+       H_typing as [ H_typing H_typing_v ] ]); inversion H_typing; subst; simpl.
+- case_eq (beq_id x i); intros H_eq.
   + apply T_Abs.
-    apply beq_id_eq in H_eq_x.
+    eapply context_invariance_t; try reflexivity || eassumption.
+    intros.
+    split; reflexivity.
+  + eapply T_Abs, IHt with (P' := P'); try assumption.
+    left.
+    intros.
+    split.
+    * unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      assumption.
+    * repeat split; eassumption.
+- case_eq (beq_id x i); intros H_eq.
+  + apply T_Abs.
+    apply beq_id_eq in H_eq.
     subst.
-    eapply context_invariance_t; try eassumption.
+    eapply context_invariance_t; try reflexivity || eassumption.
     intros.
     split; try reflexivity.
     unfold idUpdate, Maps.p_update, Maps.t_update.
     case (beq_id x i); reflexivity.
-  + apply T_Abs, IHt.
-    eapply context_invariance_t; try eassumption.
-    intros.
-    split; try reflexivity.
-    unfold idUpdate, Maps.p_update, Maps.t_update.
-    case_eq (beq_id x0 i); try reflexivity.
-    intros H_eq_x0.
-    apply beq_id_eq in H_eq_x0.
-    subst.
-    rewrite beq_id_comm in H_eq_x.
-    rewrite H_eq_x.
-    reflexivity.
+  + eapply T_Abs, IHt with (P' := P'); try assumption.
+    right.
+    split; try assumption.
+    eapply context_invariance_t; try reflexivity || eassumption.
+    * intros.
+      split; try reflexivity.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      case_eq (beq_id x0 i); try reflexivity.
+      intros H_eq_x0.
+      apply beq_id_eq in H_eq_x0.
+      subst.
+      rewrite beq_id_comm in H_eq.
+      rewrite H_eq.
+      reflexivity.
+    * assumption.
 - eapply T_App.
-  + apply IHt1. apply H2.
-  + apply IHt2. apply H4.
+  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt2 with (P' := P'). left. repeat split; eassumption.
+- eapply T_App.
+  + eapply IHt1 with (P' := P'). right. split; eassumption.
+  + eapply IHt2 with (P' := P'). right. split; eassumption.
+- case_eq (beq_id x i); intros H_eq.
+  + rewrite beq_id_eq in H_eq.
+    subst.
+    simpl in H1.
+    destruct H1.
+    * congruence.
+    * { destruct H.
+        destruct H_Delta; try congruence.
+        rewrite H1 in H0.
+        inversion H0.
+        subst.
+        eapply typable_empty_closed_t in H_typing_v as H_closed.
+        unfold closed_t in H_closed.
+        eapply context_invariance_t; try eassumption; intros x H_free_x.
+        - specialize H_closed with x.
+          contradiction.
+        - specialize H_closed with x.
+          apply appears_free_locally_or_remotely in H_free_x.
+          contradiction.
+      }
+  + apply T_Var.
+    assumption.
 - case_eq (beq_id x i); intros H_eq.
   + rewrite beq_id_eq in H_eq.
     subst.
@@ -46,14 +100,17 @@ induction t; (intros; inversion H_typing_t; subst; simpl).
     unfold idUpdate, Maps.p_update, Maps.t_update in H1.
     rewrite beq_id_refl in H1.
     destruct H1.
-    * inversion H.
-      subst.
-      eapply typable_empty_closed_t in H_typing_v as H_closed.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      unfold closed_t in H_closed.
-      specialize H_closed with x.
-      contradiction.
+    * { inversion H.
+        subst.
+        eapply typable_empty_closed_t in H_typing_v as H_closed.
+        unfold closed_t in H_closed.
+        eapply context_invariance_t; try eassumption; intros x H_free_x.
+        - specialize H_closed with x.
+          contradiction.
+        - specialize H_closed with x.
+          apply appears_free_locally_or_remotely in H_free_x.
+          contradiction.
+      }
     * destruct H.
       congruence.
   + apply T_Var.
@@ -66,137 +123,152 @@ induction t; (intros; inversion H_typing_t; subst; simpl).
     * rewrite H.
       assumption.
 - apply T_Unit.
+- apply T_Unit.
 - apply T_None.
-- apply T_Some, IHt. assumption.
+- apply T_None.
+- apply T_Some. eapply IHt with (P' := P'). left. repeat split; eassumption.
+- apply T_Some. eapply IHt with (P' := P'). right. split; eassumption.
+- apply T_Nil.
 - apply T_Nil.
 - eapply T_Cons.
-  + apply IHt1. assumption.
-  + apply IHt2. assumption.
-- eapply T_AsLocal.
-  + reflexivity.
-  + apply IHt. assumption.
-  + assumption.
-  + assumption.
-- eapply T_AsLocalFrom.
-  + reflexivity.
-  + apply IHt1. assumption.
-  + assumption.
-  + apply IHt2. assumption.
-- case_eq (beq_id x i); intros H_eq_x.
-  + eapply T_Comp; try reflexivity || assumption.
-    * apply IHt1. eassumption.
-    * apply beq_id_eq in H_eq_x.
-      subst.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-      unfold idUpdate, Maps.p_update, Maps.t_update.
-      case (beq_id x i); reflexivity.
-  + eapply T_Comp; try reflexivity || assumption.
-    * apply IHt1. eassumption.
-    * apply IHt2.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-      unfold idUpdate, Maps.p_update, Maps.t_update.
-      case_eq (beq_id x0 i); try reflexivity.
-      intros H_eq_x0.
-      apply beq_id_eq in H_eq_x0.
-      subst.
-      rewrite beq_id_comm in H_eq_x.
-      rewrite H_eq_x.
-      reflexivity.
-- case_eq (beq_id x i); intros H_eq_x.
-  + eapply T_ComFrom; try reflexivity || assumption.
-    * apply IHt1. eassumption.
-    * apply beq_id_eq in H_eq_x.
-      subst.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-      unfold idUpdate, Maps.p_update, Maps.t_update.
-      case (beq_id x i); reflexivity.
-    * apply IHt3. assumption.
-  + eapply T_ComFrom; try reflexivity || assumption.
-    * apply IHt1. eassumption.
-    * apply IHt2.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-      unfold idUpdate, Maps.p_update, Maps.t_update.
-      case_eq (beq_id x0 i); try reflexivity.
-      intros H_eq_x0.
-      apply beq_id_eq in H_eq_x0.
-      subst.
-      rewrite beq_id_comm in H_eq_x.
-      rewrite H_eq_x.
-      reflexivity.
-    * apply IHt3. assumption.
-- apply T_Signal, IHt. assumption.
-- apply T_ReactiveVar, IHt. assumption.
-- eapply T_Now.
-  + apply IHt. eassumption.
-  + assumption.
+  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt2 with (P' := P'). left. repeat split; eassumption.
+- eapply T_Cons.
+  + eapply IHt1 with (P' := P'). right. split; eassumption.
+  + eapply IHt2 with (P' := P'). right. split; eassumption.
+- eapply T_AsLocal; reflexivity || eassumption.
+- pose proof delta_typing as H_Delta.
+  specialize H_Delta with Delta x.
+  destruct H_Delta as [ H_Delta | H_Delta ].
+  + eapply T_AsLocal; reflexivity || eassumption.
+  + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
+    eapply T_AsLocal; reflexivity || eassumption.
+- eapply T_AsLocalFrom; try reflexivity || eassumption.
+  eapply IHt2. left. repeat split; eassumption.
+- pose proof delta_typing as H_Delta.
+  specialize H_Delta with Delta x.
+  destruct H_Delta as [ H_Delta | H_Delta ].
+  + eapply T_AsLocalFrom; try reflexivity || eassumption.
+    eapply IHt2 with (P' := P'). right. split; eassumption.
+  + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
+    eapply T_AsLocalFrom; try reflexivity || eassumption.
+    eapply IHt2 with (P' := P'). right. split; eassumption.
+- eapply T_Comp; try reflexivity || eassumption.
+  eapply IHt1. left. repeat split; try eassumption.
+- pose proof delta_typing as H_Delta.
+  specialize H_Delta with Delta x.
+  destruct H_Delta as [ H_Delta | H_Delta ].
+  + eapply T_Comp; try reflexivity || eassumption.
+    eapply IHt1 with (P' := P'). right. split; eassumption.
+  + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
+    eapply T_Comp; try reflexivity || eassumption.
+    eapply IHt1 with (P' := P'). right. split; eassumption.
+- eapply T_ComFrom; try reflexivity || eassumption.
+  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt3 with (P' := P'). left. repeat split; eassumption.
+- pose proof delta_typing as H_Delta.
+  specialize H_Delta with Delta x.
+  destruct H_Delta as [ H_Delta | H_Delta ].
+  + eapply T_ComFrom; try reflexivity || eassumption.
+    * eapply IHt1 with (P' := P'). right. split; eassumption.
+    * eapply IHt3 with (P' := P'). right. split; eassumption.
+  + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
+    eapply T_ComFrom; try reflexivity || eassumption.
+    * eapply IHt1 with (P' := P'). right. split; eassumption.
+    * eapply IHt3 with (P' := P'). right. split; eassumption.
+- apply T_Signal. eapply IHt with (P' := P'). left. repeat split; eassumption.
+- apply T_Signal. eapply IHt with (P' := P'). right. split; eassumption.
+- apply T_ReactiveVar. eapply IHt with (P' := P'). left. repeat split; eassumption.
+- apply T_ReactiveVar. eapply IHt with (P' := P'). right. split; eassumption.
+- eapply T_Now; try eassumption. eapply IHt with (P' := P'). left. repeat split; eassumption.
+- eapply T_Now; try eassumption. eapply IHt with (P' := P'). right. split; eassumption.
 - eapply T_Set.
-  + apply IHt1. eassumption.
-  + apply IHt2. eassumption.
+  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt2 with (P' := P'). left. repeat split; eassumption.
+- eapply T_Set.
+  + eapply IHt1 with (P' := P'). right. split; eassumption.
+  + eapply IHt2 with (P' := P'). right. split; eassumption.
+- apply T_Peer. assumption.
 - apply T_Peer. assumption.
 - apply T_Reactive. assumption.
+- apply T_Reactive. assumption.
+- apply T_Nat.
 - apply T_Nat.
 Qed.
 
 
-Lemma substitution_t_delta:
-  forall typing ties Psi Delta Gamma P P' x t T v U,
-  Gamma x = None ->
-  Context typing ties Psi (idUpdate x (U on P') Delta) Gamma P |- t \in T ->
-  Context typing ties Psi emptyPlaceEnv emptyVarEnv P' |- v \in U ->
+Lemma substitution_t:
+  forall typing ties Psi Delta Gamma P x t T v U,
+  Context typing ties Psi Delta (idUpdate x U Gamma) P |- t \in T ->
+  Context typing ties Psi emptyPlaceEnv emptyVarEnv P |- v \in U ->
   Context typing ties Psi Delta Gamma P |- [x :=_t v] t \in T.
 Proof.
+intros.
+apply substitution_t_generalized with (P' := P) (U := U).
+right. split; eassumption.
+Qed.
+
+
+Lemma substitution_s_generalized:
+  forall typing ties Psi Delta Gamma P P' x t T v U,
+  (Gamma x = None ->
+   Context typing ties Psi emptyPlaceEnv emptyVarEnv P' |- v \in U ->
+   Context typing ties Psi (idUpdate x (U on P') Delta) Gamma P |- t \in T ->
+   Context typing ties Psi Delta Gamma P |- subst_s_locality x v t LocalOrRemoteVar \in T) /\
+  (Gamma x <> None ->
+   Context typing ties Psi emptyPlaceEnv emptyVarEnv P' |- v \in U ->
+   Context typing ties Psi (idUpdate x (U on P') Delta) Gamma P |- t \in T ->
+   Context typing ties Psi Delta Gamma P |- subst_s_locality x v t RemoteVar \in T).
+Proof.
 intros until U.
-intros H_Gamma H_typing_t H_typing_v.
+generalize dependent Delta.
 generalize dependent Gamma.
 generalize dependent T.
-induction t; (intros; inversion H_typing_t; subst; simpl).
+generalize dependent P.
+induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typing; subst; simpl.
 - case_eq (beq_id x i); intros H_eq.
-  + apply T_Abs.
-    apply beq_id_eq in H_eq.
-    subst.
-    eapply context_invariance_t; try eassumption.
-    intros.
-    split; try reflexivity.
+  + eapply T_Abs, IHt; try eassumption.
     unfold idUpdate, Maps.p_update, Maps.t_update.
-    case (beq_id x i); try reflexivity.
+    rewrite H_eq.
     congruence.
-  + apply T_Abs, IHt.
-    * unfold idUpdate, Maps.p_update, Maps.t_update.
-      rewrite H_eq.
-      assumption.
-    * eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-- eapply T_App.
-  + apply IHt1; eassumption.
-  + apply IHt2; eassumption.
+  + eapply T_Abs, IHt; try eassumption.
+    unfold idUpdate, Maps.p_update, Maps.t_update.
+    rewrite H_eq.
+    assumption.
 - case_eq (beq_id x i); intros H_eq.
-  + rewrite beq_id_eq in H_eq.
-    subst.
-    simpl in H1.
-    unfold idUpdate, Maps.p_update, Maps.t_update in H1.
-    rewrite beq_id_refl in H1.
-    destruct H1; try congruence.
-    destruct H.
-    inversion H0.
-    subst.
-    eapply typable_empty_closed_t in H_typing_v as H_closed.
-    eapply context_invariance_t; try eassumption.
-    intros.
-    unfold closed_t in H_closed.
-    specialize H_closed with x.
-    contradiction.
+  + eapply T_Abs, IHt; try eassumption.
+    unfold idUpdate, Maps.p_update, Maps.t_update.
+    rewrite H_eq.
+    congruence.
+  + eapply T_Abs, IHt; try eassumption.
+    unfold idUpdate, Maps.p_update, Maps.t_update.
+    rewrite H_eq.
+    assumption.
+- eapply T_App; [ apply IHt1 | apply IHt2 ]; eassumption.
+- eapply T_App; [ apply IHt1 | apply IHt2 ]; eassumption.
+- simpl in H1.
+  case_eq (beq_id x i); intros H_eq.
+  + destruct H1.
+    * apply beq_id_eq in H_eq.
+      subst.
+      congruence.
+    * { destruct H.
+        unfold idUpdate, Maps.p_update, Maps.t_update in H0.
+        rewrite beq_id_comm in H_eq.
+        rewrite H_eq in H0.
+        inversion H0.
+        subst.
+        eapply typable_empty_closed_t in H_typing_v as H_closed.
+        unfold closed_t in H_closed.
+        eapply context_invariance_t; try eassumption; intros y H_free_y.
+        - specialize H_closed with y.
+          contradiction.
+        - specialize H_closed with y.
+          apply appears_free_locally_or_remotely in H_free_y.
+          contradiction.
+      }
   + apply T_Var.
     simpl.
-    simpl in H1.
     destruct H1.
     * left. assumption.
     * right.
@@ -207,61 +279,126 @@ induction t; (intros; inversion H_typing_t; subst; simpl).
       rewrite beq_id_comm in H_eq.
       rewrite H_eq.
       reflexivity.
+- simpl in H1.
+  case_eq (beq_id x i); intros H_eq.
+  + apply T_Var.
+    simpl.
+    apply beq_id_eq in H_eq.
+    subst.
+    destruct H1.
+    * left. assumption.
+    * destruct H.
+      congruence.
+  + apply T_Var.
+    simpl.
+    destruct H1.
+    * left. assumption.
+    * destruct H.
+      unfold idUpdate, Maps.p_update, Maps.t_update in H0.
+      rewrite beq_id_comm in H_eq.
+      rewrite H_eq in H0.
+      right. split; assumption.
+- apply T_Unit.
 - apply T_Unit.
 - apply T_None.
-- apply T_Some, IHt; assumption.
+- apply T_None.
+- apply T_Some. apply IHt; assumption.
+- apply T_Some. apply IHt; assumption.
 - apply T_Nil.
-- eapply T_Cons.
-  + apply IHt1; assumption.
-  + apply IHt2; assumption.
-- eapply T_AsLocal; try reflexivity || assumption.
-  apply IHt; assumption.
-- eapply T_AsLocalFrom; try reflexivity || assumption.
-  + apply IHt1; assumption.
-  + apply IHt2; assumption.
+- apply T_Nil.
+- apply T_Cons; [ apply IHt1 | apply IHt2 ]; eassumption.
+- apply T_Cons; [ apply IHt1 | apply IHt2 ]; eassumption.
+- eapply T_AsLocal; try reflexivity || eassumption.
+  eapply IHt; try eassumption.
+  unfold emptyVarEnv, idEmpty, Maps.p_empty.
+  reflexivity.
+- eapply T_AsLocal; try reflexivity || eassumption.
+  eapply IHt; try eassumption.
+  unfold emptyVarEnv, idEmpty, Maps.p_empty.
+  reflexivity.
+- eapply T_AsLocalFrom; try reflexivity || eassumption.
+  + eapply IHt1; try eassumption.
+    unfold emptyVarEnv, idEmpty, Maps.p_empty.
+    reflexivity.
+  + eapply IHt2; try eassumption.
+- eapply T_AsLocalFrom; try reflexivity || eassumption.
+  + eapply IHt1; try eassumption.
+    unfold emptyVarEnv, idEmpty, Maps.p_empty.
+    reflexivity.
+  + eapply IHt2; try eassumption.
 - case_eq (beq_id x i); intros H_eq.
-  + eapply T_Comp; try reflexivity || assumption.
-    * apply IHt1; eassumption.
-    * apply beq_id_eq in H_eq.
-      subst.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-      unfold idUpdate, Maps.p_update, Maps.t_update.
-      case (beq_id x i); congruence.
-  + eapply T_Comp; try reflexivity || assumption.
-    * apply IHt1; eassumption.
-    * apply IHt2; try assumption.
+  + eapply T_Comp; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
       unfold idUpdate, Maps.p_update, Maps.t_update.
       rewrite H_eq.
-      assumption.
-- case_eq (beq_id x i); intros H_eq.
-  + eapply T_ComFrom; try reflexivity || assumption.
-    * apply IHt1; eassumption.
-    * apply beq_id_eq in H_eq.
-      subst.
-      eapply context_invariance_t; try eassumption.
-      intros.
-      split; try reflexivity.
-      unfold idUpdate, Maps.p_update, Maps.t_update.
-      case (beq_id x i); congruence.
-    * apply IHt3; assumption.
-  + eapply T_ComFrom; try reflexivity || assumption.
-    * apply IHt1; eassumption.
-    * apply IHt2; try assumption.
+      congruence.
+  + eapply T_Comp; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
       unfold idUpdate, Maps.p_update, Maps.t_update.
       rewrite H_eq.
-      assumption.
-    * apply IHt3; assumption.
-- apply T_Signal, IHt; assumption.
-- apply T_ReactiveVar, IHt; assumption.
-- eapply T_Now; try eassumption.
-  apply IHt; assumption.
-- eapply T_Set.
-  + apply IHt1; eassumption.
-  + apply IHt2; eassumption.
+      unfold emptyVarEnv, idEmpty, Maps.p_empty.
+      reflexivity.
+- case_eq (beq_id x i); intros H_eq.
+  + eapply T_Comp; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      congruence.
+  + eapply T_Comp; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      unfold emptyVarEnv, idEmpty, Maps.p_empty.
+      reflexivity.
+- case_eq (beq_id x i); intros H_eq.
+  + eapply T_ComFrom; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      congruence.
+    * eapply IHt3; eassumption.
+  + eapply T_ComFrom; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      unfold emptyVarEnv, idEmpty, Maps.p_empty.
+      reflexivity.
+    * eapply IHt3; eassumption.
+- case_eq (beq_id x i); intros H_eq.
+  + eapply T_ComFrom; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      congruence.
+    * eapply IHt3; eassumption.
+  + eapply T_ComFrom; try reflexivity || eassumption.
+    * eapply IHt1; eassumption.
+    * eapply IHt2; try eassumption.
+      unfold idUpdate, Maps.p_update, Maps.t_update.
+      rewrite H_eq.
+      unfold emptyVarEnv, idEmpty, Maps.p_empty.
+      reflexivity.
+    * eapply IHt3; eassumption.
+- apply T_Signal. apply IHt; assumption.
+- apply T_Signal. apply IHt; assumption.
+- apply T_ReactiveVar. apply IHt; assumption.
+- apply T_ReactiveVar. apply IHt; assumption.
+- eapply T_Now; try eassumption. apply IHt; assumption.
+- eapply T_Now; try eassumption. apply IHt; assumption.
+- eapply T_Set; [ apply IHt1 | apply IHt2 ]; eassumption.
+- eapply T_Set; [ apply IHt1 | apply IHt2 ]; eassumption.
+- apply T_Peer. assumption.
 - apply T_Peer. assumption.
 - apply T_Reactive. assumption.
+- apply T_Reactive. assumption.
+- apply T_Nat.
 - apply T_Nat.
 Qed.
 
@@ -284,7 +421,7 @@ induction s; (intros; inversion H; subst; simpl).
       intros.
       unfold idUpdate, Maps.p_update, Maps.t_update.
       case_eq (beq_id x i); try reflexivity.
-    * eapply substitution_t_delta; try eassumption.
+    * eapply substitution_s_generalized; try eassumption.
       unfold emptyVarEnv, idEmpty, Maps.p_empty.
       reflexivity.
   + eapply T_Place.
@@ -301,7 +438,7 @@ induction s; (intros; inversion H; subst; simpl).
       rewrite beq_id_comm in H_eq_x.
       rewrite H_eq_x.
       reflexivity.
-    * eapply substitution_t_delta; try eassumption.
+    * eapply substitution_s_generalized; try eassumption.
       unfold emptyVarEnv, idEmpty, Maps.p_empty.
       reflexivity.
 - apply T_End.

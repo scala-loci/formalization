@@ -25,6 +25,30 @@ induction H_transmittable; intros; inversion H_typing.
 Qed.
 
 
+Lemma gamma_typing : forall (Gamma: varEnv) (x: id),
+  Gamma x = None \/ (exists T, Gamma x = Some T).
+Proof.
+intros.
+destruct (Gamma x) as [ T' |].
+- right. exists T'. reflexivity.
+- left. reflexivity.
+Qed.
+
+
+Lemma delta_typing : forall (Delta: placeEnv) (x: id),
+  Delta x = None \/ (exists T P, Delta x = Some (T on P)).
+Proof.
+intros.
+destruct (Delta x).
+- right.
+  destruct s as [ T' P' ].
+  exists T', P'.
+  reflexivity.
+- left.
+  reflexivity.
+Qed.
+
+
 Lemma appears_free_locally_or_remotely : forall t x,
     appears_free_in_t_locality x t RemoteVar ->
     appears_free_in_t_locality x t LocalOrRemoteVar.

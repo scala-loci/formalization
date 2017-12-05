@@ -26,33 +26,27 @@ Require Coq.Lists.ListSet.
 (* --------------------------------------------------------------------- *)
 
 
-Fixpoint subst_t (id: id) (value: t) (term: t): t :=
+Fixpoint subst_t x value term: t :=
   match term with
-  | lambda id' type term =>
-    if beq_id id id'
-      then lambda id' type term
-      else lambda id' type (subst_t id value term)
-  | app term0 term1 => app (subst_t id value term0) (subst_t id value term1)
-  | idApp id' => if beq_id id id' then value else term
+  | lambda x' type term =>
+    if beq_id x x'
+      then lambda x' type term
+      else lambda x' type (subst_t x value term)
+  | app term0 term1 => app (subst_t x value term0) (subst_t x value term1)
+  | idApp x' => if beq_id x x' then value else term
   | unit => unit
   | none type => none type
-  | some term => some (subst_t id value term)
+  | some term => some (subst_t x value term)
   | nil type => nil type
-  | cons term0 term1 => cons (subst_t id value term0) (subst_t id value term1)
-  | asLocal term type => asLocal (subst_t id value term) type
-  | asLocalFrom term0 type term1 => asLocalFrom (subst_t id value term0) type (subst_t id value term1)
-  | asLocalIn id' term0 term1 type =>
-    if beq_id id id'
-      then asLocalIn id' (subst_t id value term0) term1 type
-      else asLocalIn id' (subst_t id value term0) (subst_t id value term1) type
-  | asLocalInFrom id' term0 term1 type term2 =>
-    if beq_id id id'
-      then asLocalInFrom id' (subst_t id value term0) term1 type (subst_t id value term2)
-      else asLocalInFrom id' (subst_t id value term0) (subst_t id value term1) type (subst_t id value term2)
-  | signal term => signal (subst_t id value term)
-  | var term => var (subst_t id value term)
-  | now term => now (subst_t id value term)
-  | set term0 term1 => set (subst_t id value term0) (subst_t id value term1)
+  | cons term0 term1 => cons (subst_t x value term0) (subst_t x value term1)
+  | asLocal term type => asLocal term type
+  | asLocalFrom term0 type term1 => asLocalFrom term0 type (subst_t x value term1)
+  | asLocalIn x' term0 term1 type => asLocalIn x' (subst_t x value term0) term1 type
+  | asLocalInFrom x' term0 term1 type term2 => asLocalInFrom x' (subst_t x value term0) term1 type (subst_t x value term2)
+  | signal term => signal (subst_t x value term)
+  | var term => var (subst_t x value term)
+  | now term => now (subst_t x value term)
+  | set term0 term1 => set (subst_t x value term0) (subst_t x value term1)
   | peerApp peer => peerApp peer
   | reactApp reactive => reactApp reactive
   | tnat n => tnat n
@@ -60,12 +54,47 @@ Fixpoint subst_t (id: id) (value: t) (term: t): t :=
 
 Notation "[ id :=_t value ] term" := (subst_t id value term) (at level 40).
 
-Fixpoint subst_s (id: id) (value: t) (term: s): s :=
+Fixpoint subst_s_locality x value term locality: t :=
   match term with
-  | placed id' type term0 term1 =>
-    if beq_id id id'
-      then placed id' type (subst_t id value term0) term1
-      else placed id' type (subst_t id value term0) (subst_s id value term1)
+  | lambda x' type term =>
+    if beq_id x x'
+      then lambda x' type (subst_s_locality x value term RemoteVar)
+      else lambda x' type (subst_s_locality x value term locality)
+  | app term0 term1 => app (subst_s_locality x value term0 locality) (subst_s_locality x value term1 locality)
+  | idApp x' => match locality with
+    | LocalOrRemoteVar => if beq_id x x' then value else term
+    | RemoteVar => term
+    end
+  | unit => unit
+  | none type => none type
+  | some term => some (subst_s_locality x value term locality)
+  | nil type => nil type
+  | cons term0 term1 => cons (subst_s_locality x value term0 locality) (subst_s_locality x value term1 locality)
+  | asLocal term type => asLocal (subst_s_locality x value term LocalOrRemoteVar) type
+  | asLocalFrom term0 type term1 => asLocalFrom (subst_s_locality x value term0 LocalOrRemoteVar) type (subst_s_locality x value term1 locality)
+  | asLocalIn x' term0 term1 type =>
+    if beq_id x x'
+      then asLocalIn x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type
+      else asLocalIn x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type
+  | asLocalInFrom x' term0 term1 type term2 =>
+    if beq_id x x'
+      then asLocalInFrom x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type (subst_s_locality x value term2 locality)
+      else asLocalInFrom x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type (subst_s_locality x value term2 locality)
+  | signal term => signal (subst_s_locality x value term locality)
+  | var term => var (subst_s_locality x value term locality)
+  | now term => now (subst_s_locality x value term locality)
+  | set term0 term1 => set (subst_s_locality x value term0 locality) (subst_s_locality x value term1 locality)
+  | peerApp peer => peerApp peer
+  | reactApp reactive => reactApp reactive
+  | tnat n => tnat n
+  end.
+
+Fixpoint subst_s x value term: s :=
+  match term with
+  | placed x' type term0 term1 =>
+    if beq_id x x'
+      then placed x' type (subst_s_locality x value term0 LocalOrRemoteVar) term1
+      else placed x' type (subst_s_locality x value term0 LocalOrRemoteVar) (subst_s x value term1)
   | pUnit => pUnit
   end.
 

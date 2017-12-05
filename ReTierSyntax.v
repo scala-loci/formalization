@@ -313,34 +313,41 @@ Inductive program : Type :=
   | Prog : peerTyping -> Ties -> s -> program.
 
 
-Fixpoint appears_free_in_t x t : Prop :=
+Inductive var_locality : Type := LocalOrRemoteVar | RemoteVar.
+
+Fixpoint appears_free_in_t_locality x t locality : Prop :=
   match t with
-  | lambda x' type t => if beq_id x x' then False else appears_free_in_t x t
-  | app t0 t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
-  | idApp x' => if beq_id x x' then True else False
+  | lambda x' type t => if beq_id x x' then appears_free_in_t_locality x t RemoteVar else appears_free_in_t_locality x t locality
+  | app t0 t1 => appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 locality
+  | idApp x' => match locality with
+    | LocalOrRemoteVar => if beq_id x x' then True else False
+    | RemoteVar => False
+    end
   | unit => False
   | none type => False
-  | some t => appears_free_in_t x t
+  | some t => appears_free_in_t_locality x t locality
   | nil type => False
-  | cons t0 t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
-  | asLocal t type => appears_free_in_t x t
-  | asLocalFrom t0 type t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
+  | cons t0 t1 => appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 locality
+  | asLocal t type => appears_free_in_t_locality x t LocalOrRemoteVar
+  | asLocalFrom t0 type t1 => appears_free_in_t_locality x t0 LocalOrRemoteVar \/ appears_free_in_t_locality x t1 locality
   | asLocalIn x' t0 t1 type =>
     if beq_id x x'
-      then appears_free_in_t x t0
-      else appears_free_in_t x t0 \/ appears_free_in_t x t1
+      then appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 RemoteVar
+      else appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 LocalOrRemoteVar
   | asLocalInFrom x' t0 t1 type t2 =>
     if beq_id x x'
-      then appears_free_in_t x t0 \/ appears_free_in_t x t2
-      else appears_free_in_t x t0 \/ appears_free_in_t x t1 \/ appears_free_in_t x t2
-  | signal t => appears_free_in_t x t
-  | var t => appears_free_in_t x t
-  | now t => appears_free_in_t x t
-  | set t0 t1 => appears_free_in_t x t0 \/ appears_free_in_t x t1
+      then appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 RemoteVar \/ appears_free_in_t_locality x t2 locality
+      else appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 LocalOrRemoteVar \/ appears_free_in_t_locality x t2 locality
+  | signal t => appears_free_in_t_locality x t locality
+  | var t => appears_free_in_t_locality x t locality
+  | now t => appears_free_in_t_locality x t locality
+  | set t0 t1 => appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 locality
   | peerApp peer => False
   | reactApp reactive => False
   | tnat n => False
   end.
+
+Definition appears_free_in_t x t := appears_free_in_t_locality x t LocalOrRemoteVar.
 
 Fixpoint appears_free_in_s x s : Prop :=
   match s with

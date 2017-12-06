@@ -5,8 +5,9 @@ Require Import ReTierProofContext.
 
 
 Lemma substitution_t_generalized:
-  forall typing ties Psi Delta Gamma P P' x t T v U,
-  (Gamma x = None /\
+  forall typing ties Psi Delta Gamma P x t T v U,
+  (exists P',
+   Gamma x = None /\
    (Delta x = None \/ Delta x = Some (U on P')) /\
    Context typing ties Psi Delta Gamma P |- t \in T /\
    Context typing ties Psi emptyPlaceEnv emptyVarEnv P' |- v \in U) \/
@@ -20,9 +21,9 @@ generalize dependent Gamma.
 generalize dependent T.
 generalize dependent U.
 generalize dependent P.
-generalize dependent P'.
 induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
    [ destruct
+       H_typing as [ P' H_typing ],
        H_typing as [ H_Gamma H_typing ],
        H_typing as [ H_Delta H_typing ],
        H_typing as [ H_typing H_typing_v ] |
@@ -33,9 +34,10 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
     eapply context_invariance_t; try reflexivity || eassumption.
     intros.
     split; reflexivity.
-  + eapply T_Abs, IHt with (P' := P'); try assumption.
+  + eapply T_Abs, IHt; try assumption.
     left.
     intros.
+    exists P'.
     split.
     * unfold idUpdate, Maps.p_update, Maps.t_update.
       rewrite H_eq.
@@ -50,7 +52,7 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
     split; try reflexivity.
     unfold idUpdate, Maps.p_update, Maps.t_update.
     case (beq_id x i); reflexivity.
-  + eapply T_Abs, IHt with (P' := P'); try assumption.
+  + eapply T_Abs, IHt; try assumption.
     right.
     split; try assumption.
     eapply context_invariance_t; try reflexivity || eassumption.
@@ -66,11 +68,11 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
       reflexivity.
     * assumption.
 - eapply T_App.
-  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
-  + eapply IHt2 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt1. left. exists P'. repeat split; eassumption.
+  + eapply IHt2. left. exists P'. repeat split; eassumption.
 - eapply T_App.
-  + eapply IHt1 with (P' := P'). right. split; eassumption.
-  + eapply IHt2 with (P' := P'). right. split; eassumption.
+  + eapply IHt1. right. split; eassumption.
+  + eapply IHt2. right. split; eassumption.
 - case_eq (beq_id x i); intros H_eq.
   + rewrite beq_id_eq in H_eq.
     subst.
@@ -126,16 +128,16 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
 - apply T_Unit.
 - apply T_None.
 - apply T_None.
-- apply T_Some. eapply IHt with (P' := P'). left. repeat split; eassumption.
-- apply T_Some. eapply IHt with (P' := P'). right. split; eassumption.
+- apply T_Some. eapply IHt. left. exists P'. repeat split; eassumption.
+- apply T_Some. eapply IHt. right. split; eassumption.
 - apply T_Nil.
 - apply T_Nil.
 - eapply T_Cons.
-  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
-  + eapply IHt2 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt1. left. exists P'. repeat split; eassumption.
+  + eapply IHt2. left. exists P'. repeat split; eassumption.
 - eapply T_Cons.
-  + eapply IHt1 with (P' := P'). right. split; eassumption.
-  + eapply IHt2 with (P' := P'). right. split; eassumption.
+  + eapply IHt1. right. split; eassumption.
+  + eapply IHt2. right. split; eassumption.
 - eapply T_AsLocal; reflexivity || eassumption.
 - pose proof delta_typing as H_Delta.
   specialize H_Delta with Delta x.
@@ -144,50 +146,50 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
   + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
     eapply T_AsLocal; reflexivity || eassumption.
 - eapply T_AsLocalFrom; try reflexivity || eassumption.
-  eapply IHt2. left. repeat split; eassumption.
+  eapply IHt2. left. exists P'. repeat split; eassumption.
 - pose proof delta_typing as H_Delta.
   specialize H_Delta with Delta x.
   destruct H_Delta as [ H_Delta | H_Delta ].
   + eapply T_AsLocalFrom; try reflexivity || eassumption.
-    eapply IHt2 with (P' := P'). right. split; eassumption.
+    eapply IHt2. right. split; eassumption.
   + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
     eapply T_AsLocalFrom; try reflexivity || eassumption.
-    eapply IHt2 with (P' := P'). right. split; eassumption.
+    eapply IHt2. right. split; eassumption.
 - eapply T_Comp; try reflexivity || eassumption.
-  eapply IHt1. left. repeat split; try eassumption.
+  eapply IHt1. left. exists P'. repeat split; try eassumption.
 - pose proof delta_typing as H_Delta.
   specialize H_Delta with Delta x.
   destruct H_Delta as [ H_Delta | H_Delta ].
   + eapply T_Comp; try reflexivity || eassumption.
-    eapply IHt1 with (P' := P'). right. split; eassumption.
+    eapply IHt1. right. split; eassumption.
   + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
     eapply T_Comp; try reflexivity || eassumption.
-    eapply IHt1 with (P' := P'). right. split; eassumption.
+    eapply IHt1. right. split; eassumption.
 - eapply T_ComFrom; try reflexivity || eassumption.
-  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
-  + eapply IHt3 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt1. left. exists P'. repeat split; eassumption.
+  + eapply IHt3. left. exists P'. repeat split; eassumption.
 - pose proof delta_typing as H_Delta.
   specialize H_Delta with Delta x.
   destruct H_Delta as [ H_Delta | H_Delta ].
   + eapply T_ComFrom; try reflexivity || eassumption.
-    * eapply IHt1 with (P' := P'). right. split; eassumption.
-    * eapply IHt3 with (P' := P'). right. split; eassumption.
+    * eapply IHt1. right. split; eassumption.
+    * eapply IHt3. right. split; eassumption.
   + destruct H_Delta as [ T'' H_Delta ], H_Delta as [ P'' H_Delta ].
     eapply T_ComFrom; try reflexivity || eassumption.
-    * eapply IHt1 with (P' := P'). right. split; eassumption.
-    * eapply IHt3 with (P' := P'). right. split; eassumption.
-- apply T_Signal. eapply IHt with (P' := P'). left. repeat split; eassumption.
-- apply T_Signal. eapply IHt with (P' := P'). right. split; eassumption.
-- apply T_ReactiveVar. eapply IHt with (P' := P'). left. repeat split; eassumption.
-- apply T_ReactiveVar. eapply IHt with (P' := P'). right. split; eassumption.
-- eapply T_Now; try eassumption. eapply IHt with (P' := P'). left. repeat split; eassumption.
-- eapply T_Now; try eassumption. eapply IHt with (P' := P'). right. split; eassumption.
+    * eapply IHt1. right. split; eassumption.
+    * eapply IHt3. right. split; eassumption.
+- apply T_Signal. eapply IHt. left. exists P'. repeat split; eassumption.
+- apply T_Signal. eapply IHt. right. split; eassumption.
+- apply T_ReactiveVar. eapply IHt. left. exists P'. repeat split; eassumption.
+- apply T_ReactiveVar. eapply IHt. right. split; eassumption.
+- eapply T_Now; try eassumption. eapply IHt. left. exists P'. repeat split; eassumption.
+- eapply T_Now; try eassumption. eapply IHt. right. split; eassumption.
 - eapply T_Set.
-  + eapply IHt1 with (P' := P'). left. repeat split; eassumption.
-  + eapply IHt2 with (P' := P'). left. repeat split; eassumption.
+  + eapply IHt1. left. exists P'. repeat split; eassumption.
+  + eapply IHt2. left. exists P'. repeat split; eassumption.
 - eapply T_Set.
-  + eapply IHt1 with (P' := P'). right. split; eassumption.
-  + eapply IHt2 with (P' := P'). right. split; eassumption.
+  + eapply IHt1. right. split; eassumption.
+  + eapply IHt2. right. split; eassumption.
 - apply T_Peer. assumption.
 - apply T_Peer. assumption.
 - apply T_Reactive. assumption.
@@ -204,7 +206,7 @@ Lemma substitution_t:
   Context typing ties Psi Delta Gamma P |- [x :=_t v] t \in T.
 Proof.
 intros.
-apply substitution_t_generalized with (P' := P) (U := U).
+eapply substitution_t_generalized.
 right. split; eassumption.
 Qed.
 

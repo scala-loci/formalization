@@ -4,6 +4,9 @@ Require Import ReTierDynamicSemantics.
 Require Import ReTierProofContext.
 Require Import ReTierProofSubstitution.
 Require Import ReTierProofAggregation.
+Require Import ReTierProofSubstitution.
+
+
 
 
 Lemma tied_not_None: forall context P1 P2,
@@ -25,6 +28,15 @@ Proof.
   1-5: congruence.
 Qed.
 
+
+
+
+Lemma substitution_t_relaxed:
+  forall typing ties Psi Delta Gamma P x t T v U,
+  Context typing ties Psi Delta (idUpdate x U Gamma) P |- t \in T ->
+  Context typing ties Psi Delta Gamma P |- v \in U ->
+  Context typing ties Psi Delta Gamma P |- [x :=_t v] t \in T.
+Admitted.
 
 
 
@@ -68,6 +80,187 @@ Lemma preservation_nonReactive: forall t t' T statContext dynContext,
     statContext |- t' \in T'.
 *)
 
+
+Lemma transmittable_peer_invariant: forall t T typing ties reactEnv placeEnv varEnv P P',
+  transmittable_value t ->
+  transmittable_type T ->
+  Context typing ties reactEnv placeEnv emptyVarEnv P |- t \in T ->
+  Context typing ties reactEnv placeEnv varEnv P' |- t \in T.
+Proof.
+  intros t T typing ties reactEnv placeEnv varEnv P P' Htrans_t Htrans_T Hstat.
+  generalize dependent T.
+  (*
+  inversion Htrans_t; subst; inversion Hstat; subst.
+  - apply T_Unit.
+  - apply T_None.
+  - apply T_Some. 
+  *)
+  
+  induction t as [  x Tx body IHbody (* lambda : id -> T -> t -> t *)
+                  | fct IHfct arg IHarg   (* app    : t -> t -> t *)
+                  | x         (* idApp  : id -> t *)
+                  |           (* unit   : t *)
+                  | Tn        (* none   : T -> t *)
+                  | ts IHts        (* some   : t -> t *)
+                  | Tn        (* nil    : T -> t *)
+                  | tc IHtc tl IHtl     (* cons   : t -> t -> t *)
+                  | targ IHtarg S    (* asLocal       : t -> S -> t  *)
+                  | targ IHtarg S tfrom IHtfrom    (* asLocalFrom   : t -> S -> t -> t *)
+                  | x tassign IHtassign tin IHtin S (* asLocalIn     : id -> t -> t -> S -> t *)
+                  | targ tassign IHtassign tin IHtin S tfrom IHtfrom (* asLocalInFrom : id -> t -> t -> S -> t -> t *)
+                  | ts IHts        (* signal : t -> t *)
+                  | tv IHtv        (* var    : t -> t *)
+                  | tn IHtn        (* now    : t -> t *)
+                  | ttarget IHttarget tsource IHtsource (* set    : t -> t -> t *)
+                  | p         (* peerApp  : p -> t *)
+                  | r         (* reactApp : r -> t *)
+                  (* TODO: remove ? *)
+                  | n         (* tnat   : nat -> t *)
+  ]; intros T Htrans_T Hstat; inversion Htrans_t; inversion Hstat; subst.
+  - apply T_Unit.
+  - apply T_None.
+  - apply T_Some. apply IHts.
+    + assumption.
+    + inversion Htrans_T. assumption.
+    + assumption.
+  - apply T_Nil.
+  - apply T_Cons.
+    + apply IHtc.
+      * assumption.
+      * inversion Htrans_T. subst. assumption.
+      * assumption.
+    + apply IHtl.
+      * assumption.
+      * assumption.
+      * assumption.
+  - apply T_Peer. assumption.
+  - apply T_Reactive. assumption.
+  - apply T_Nat.
+Qed.
+
+Lemma transmittable_peer_invariant_gen: forall t T typing ties reactEnv placeEnv placeEnv' varEnv varEnv' P P',
+  transmittable_value t ->
+  transmittable_type T ->
+  Context typing ties reactEnv placeEnv varEnv P |- t \in T ->
+  Context typing ties reactEnv placeEnv' varEnv' P' |- t \in T.
+Admitted.
+(*Proof.
+  intros t T typing ties reactEnv placeEnv varEnv P P' Htrans_t Htrans_T Hstat.
+  generalize dependent T.
+  (*
+  inversion Htrans_t; subst; inversion Hstat; subst.
+  - apply T_Unit.
+  - apply T_None.
+  - apply T_Some. 
+  *)
+  
+  induction t as [  x Tx body IHbody (* lambda : id -> T -> t -> t *)
+                  | fct IHfct arg IHarg   (* app    : t -> t -> t *)
+                  | x         (* idApp  : id -> t *)
+                  |           (* unit   : t *)
+                  | Tn        (* none   : T -> t *)
+                  | ts IHts        (* some   : t -> t *)
+                  | Tn        (* nil    : T -> t *)
+                  | tc IHtc tl IHtl     (* cons   : t -> t -> t *)
+                  | targ IHtarg S    (* asLocal       : t -> S -> t  *)
+                  | targ IHtarg S tfrom IHtfrom    (* asLocalFrom   : t -> S -> t -> t *)
+                  | x tassign IHtassign tin IHtin S (* asLocalIn     : id -> t -> t -> S -> t *)
+                  | targ tassign IHtassign tin IHtin S tfrom IHtfrom (* asLocalInFrom : id -> t -> t -> S -> t -> t *)
+                  | ts IHts        (* signal : t -> t *)
+                  | tv IHtv        (* var    : t -> t *)
+                  | tn IHtn        (* now    : t -> t *)
+                  | ttarget IHttarget tsource IHtsource (* set    : t -> t -> t *)
+                  | p         (* peerApp  : p -> t *)
+                  | r         (* reactApp : r -> t *)
+                  (* TODO: remove ? *)
+                  | n         (* tnat   : nat -> t *)
+  ]; intros T Htrans_T Hstat; inversion Htrans_t; inversion Hstat; subst.
+  - apply T_Unit.
+  - apply T_None.
+  - apply T_Some. apply IHts.
+    + assumption.
+    + inversion Htrans_T. assumption.
+    + assumption.
+  - apply T_Nil.
+  - apply T_Cons.
+    + apply IHtc.
+      * assumption.
+      * inversion Htrans_T. subst. assumption.
+      * assumption.
+    + apply IHtl.
+      * assumption.
+      * assumption.
+      * assumption.
+  - apply T_Peer. assumption.
+  - apply T_Reactive. assumption.
+  - apply T_Nat.
+Qed.
+*)
+
+Lemma transmittable_value_type: forall v T typing ties reactEnv placeEnv varEnv P,
+  transmittable_value v ->
+  Context typing ties reactEnv placeEnv varEnv P |- v \in T ->
+  transmittable_type T.
+Proof.
+(*
+  intros v T typing ties reactEnv placeEnv varEnv P Htrans Hstat.
+  generalize dependent v.
+  induction T as [ T1 IHT1 T2 IHT2 (* Arrow  : T -> T -> T *)
+                  |   (* Unit   : T *)
+                  |   (* Option : T -> T *)
+                  |   (* List   : T -> T *)
+                  |   (* Remote : P -> T *)
+                  |   (* Signal : T -> T *)
+                  |   (* Var    : T -> T *)
+                  |   (* Tnat   : T *) ].
+  - intros v Htrans Hstat.
+    (* inversion Htrans; subst; inversion Hstat; subst. *)
+    inversion Htrans; subst.
+    + inversion Hstat.
+    + inversion Hstat.
+    + inversion Hstat.
+    + inversion Hstat.
+    + inversion Hstat.
+    + inversion Hstat.
+    + (* TODO: fix problem *) admit.
+    + inversion Hstat.
+  - intros v Htrans Hstat.
+    inversion Htrans; subst; try apply U_Unit; inversion Hstat.
+  - intros v Htrans Hstat. inversion Htrans; subst.
+    + inversion Hstat.
+    + inversion Hstat; subst.
+    + inversion Hstat. 
+  
+  induction v as [  (* lambda : id -> T -> t -> t *)
+                  | (* app    : t -> t -> t *)
+                  | (* idApp  : id -> t *)
+                  |           (* unit   : t *)
+                  | Tn        (* none   : T -> t *)
+                  | ts IHts        (* some   : t -> t *)
+                  | Tn        (* nil    : T -> t *)
+                  | tc IHtc tl IHtl     (* cons   : t -> t -> t *)
+                  | (* asLocal       : t -> S -> t  *)
+                  | (* asLocalFrom   : t -> S -> t -> t *)
+                  | (* asLocalIn     : id -> t -> t -> S -> t *)
+                  | (* asLocalInFrom : id -> t -> t -> S -> t -> t *)
+                  | ts IHts        (* signal : t -> t *)
+                  | tv IHtv        (* var    : t -> t *)
+                  | (* now    : t -> t *)
+                  | (* set    : t -> t -> t *)
+                  | p         (* peerApp  : p -> t *)
+                  | (* reactApp : r -> t *)
+                  (* TODO: remove ? *)
+                  | n         (* tnat   : nat -> t *)
+  ]; inversion Htrans. 
+  - inversion Hstat. apply U_Unit.
+  - inversion Hstat. apply U_Option. subst. appl
+  ; inversion Hstat; subst. 
+  - apply U_Unit.
+  - apply U_Option. apply 
+
+*)
+Admitted.
+
 Lemma preservation_nonReactive: forall t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys,
   Context typing ties reactEnv placeEnv varEnv P |- t \in T -> 
   LeContext ties typing peerInsts P reactSys |> t L==> Right _ _ t' ->
@@ -79,11 +272,52 @@ generalize dependent P.
 generalize dependent T.
 generalize dependent t'.
 generalize dependent varEnv.
-induction t.
+induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
+                  | fct IHfct arg IHarg   (* app    : t -> t -> t *)
+                  | x         (* idApp  : id -> t *)
+                  |           (* unit   : t *)
+                  | Tn        (* none   : T -> t *)
+                  | ts IHts        (* some   : t -> t *)
+                  | Tn        (* nil    : T -> t *)
+                  | tc IHtc tl IHtl     (* cons   : t -> t -> t *)
+                  | targ IHtarg S    (* asLocal       : t -> S -> t  *)
+                  | targ IHtarg S tfrom IHtfrom    (* asLocalFrom   : t -> S -> t -> t *)
+                  | x tassign IHtassign tin IHtin S (* asLocalIn     : id -> t -> t -> S -> t *)
+                  | targ tassign IHtassign tin IHtin S tfrom IHtfrom (* asLocalInFrom : id -> t -> t -> S -> t -> t *)
+                  | ts IHts        (* signal : t -> t *)
+                  | tv IHtv        (* var    : t -> t *)
+                  | tn IHtn        (* now    : t -> t *)
+                  | ttarget IHttarget tsource IHtsource (* set    : t -> t -> t *)
+                  | p         (* peerApp  : p -> t *)
+                  | r         (* reactApp : r -> t *)
+                  (* TODO: remove ? *)
+                  | n         (* tnat   : nat -> t *)
+  ].
 
-1-8: admit.
+- (* lambda *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+- (* app *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn. inversion H_stat.
+  rewrite <- H in H8. inversion H8. simpl in H13.
+  apply substitution_t_relaxed with (U := T2). (* lemma has no proof yet... useless if not povable *)
+  + assumption.
+  + assumption.
+- (* idApp *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+- (* unit *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+- (* none *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+- (* some *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+- (* nil *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+- (* cons *)
+  intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
 
-- intros varEnv t' T P H_stat H_dyn.
+
+- (* asLocal *)
+  intros varEnv t' T P H_stat H_dyn.
   inversion H_stat.
   subst.
 
@@ -91,7 +325,7 @@ induction t.
   apply tied_not_SomeMNone in H5 as H4.
   inversion H_dyn.
   + inversion H10.
-    apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := t) (v_type := T1); subst.
+    apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := targ) (v_type := T1); subst.
     * apply H2.
     * apply H4.
     * unfold getTies. symmetry. assumption.
@@ -103,9 +337,85 @@ induction t.
     eapply T_AsLocal.
     * assumption.
     * reflexivity.
-    * apply IHt; assumption.
+    * apply IHtarg; assumption.
     * assumption.
     * assumption.
+
+
+- (* asLocalFrom *)
+  intros varEnv t' T P Hstat Hdyn.
+  inversion Hdyn as [ | | | |
+                      context v T0 P1 p Htrans_targ Hcontext Heq_v_targ Heq_targ_t' 
+                      Htaut
+                      | |
+                      context t targ' Targ P1 tfromTmp contextTmp tiesTmp
+                      typingTmp peerInstsTmp Ptmp reactSysTmp
+                      HcontextTmp H0tmp Hdyn_targ H2tmp H3tmp H4tmp Htaut
+                      | | | | ].
+  + clear Htaut. symmetry in Heq_targ_t'. subst.
+    inversion Hstat as 
+    [ |  |  |  |  |  |  |  |  |  |
+      contextTmp P2tmp P3tmp t1tmp t2tmp Htmp Htrans_T H1tmp 
+      Hstat_targ_P1 Htied_P_P1 Hstat_tfrom
+      H5tmp H6tmp H7tmp
+      |  |  |  |  |  |  |  | ].
+    subst.
+    simpl in Hstat_targ_P1. simpl in Htied_P_P1.
+    eapply transmittable_peer_invariant; eassumption.
+  + subst.
+    clear Htaut.
+    symmetry in HcontextTmp. inversion HcontextTmp. subst. clear HcontextTmp.
+    inversion Hstat as 
+    [ |  |  |  |  |  |  |  |  |  |
+      contextTmp P2tmp P3tmp t1tmp t2tmp Htmp Htrans_T H1tmp 
+      Hstat_targ_P1 Htied_P_P1 Hstat_tfrom
+      H5tmp H6tmp H7tmp
+      |  |  |  |  |  |  |  | ].
+    subst. simpl in Hstat_targ_P1. simpl in Htied_P_P1.
+    eapply T_AsLocalFrom.
+    * assumption.
+    * reflexivity.
+    * simpl. apply IHtarg; assumption.
+    * simpl. assumption.
+    * assumption.
+    
+    
+- (* asLocalIn *)
+  intros varEnv t' T P Hstat Hdyn.
+  inversion Hdyn as [ |  | 
+                      context tmp1 tmp2 tm3 Tin Pin Htrans Hcontext Htmp1 Ht' Htaut
+                    |  |  |  |  |  |  |  | ].
+  subst.
+  clear Htaut.
+  inversion Hstat as
+  [ |  |  |  |  |  |  |  |  |  |  |
+    context xTmp tTmp1 tTmp2
+    Tassign
+    Ttmp2 Ttmp3 Ptmp1 Ptmp2
+    Htrans_ Htmp1 Hstat_tassign Hstat_tin Htied_P_Pin Hphi
+    Htmp2 Htmp3 Htmp4
+    |  |  |  |  |  |  | ].
+  subst. simpl in Htied_P_Pin. simpl in Hphi. (* simpl in Hstat_tin. (*?*) *)
+  eapply T_AsLocal.
+  + assumption.
+  + reflexivity.
+  + simpl. eapply substitution_t.
+    * eassumption.
+    * { eapply transmittable_peer_invariant_gen.
+        - assumption.
+        - eapply transmittable_value_type.
+          + eassumption.
+          + eassumption.
+        - eassumption.
+      }
+  + simpl. assumption.
+  + auto.
+  
+  
+- (* asLocalInFrom *)
+Admitted.
+
+
 
 
 

@@ -293,6 +293,7 @@ Proof.
     + reflexivity.
     + { apply T_Comp with (P0 := Peer "p0") (T0 := Unit).
         - apply U_Unit.
+        - apply U_Unit.
         - reflexivity.
         - apply T_Unit.
         - apply T_Unit.
@@ -315,6 +316,7 @@ Proof.
   - split.
     + reflexivity.
     + { apply T_Comp with (P0 := Peer "p0") (T0 := Unit).
+        - apply U_Unit.
         - apply U_Unit.
         - reflexivity.
         - apply T_Unit.
@@ -339,6 +341,7 @@ Proof.
     + reflexivity.
     + { apply T_Comp with (P0 := Peer "p0") (T0 := Unit).
         - apply U_Unit.
+        - apply U_Unit.
         - reflexivity.
         - apply T_Unit.
         - apply T_Unit.
@@ -361,6 +364,7 @@ Proof.
   - split.
     + reflexivity.
     + { apply T_Comp with (P0 := Peer "p0") (T0 := Unit).
+        - apply U_Unit.
         - apply U_Unit.
         - reflexivity.
         - apply T_Unit.
@@ -390,6 +394,7 @@ Proof.
         - reflexivity.
         - apply T_ComFrom with (T0 := Unit) (P0 := Peer "p0").
           + apply U_Unit.
+          + apply U_Unit.
           + reflexivity.
           + apply T_Unit.
           + apply T_Unit.
@@ -418,6 +423,7 @@ Proof.
     + { split.
         - reflexivity.
         - apply T_ComFrom with (T0 := Unit) (P0 := Peer "p0").
+          + apply U_Unit.
           + apply U_Unit.
           + reflexivity.
           + apply T_Unit.

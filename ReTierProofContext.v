@@ -459,8 +459,8 @@ induction t; intros; inversion H_typing.
     split; try reflexivity.
     intros.
     apply H_free_x_Delta. simpl. left. assumption.
-- eapply IHt1 in H6.
-  + eapply IHt2 in H8.
+- eapply IHt1 in H7.
+  + eapply IHt2 in H9.
     * eapply T_Comp; eassumption.
     * { intros y H_free_y.
         apply H_free_x_Delta.
@@ -488,9 +488,9 @@ induction t; intros; inversion H_typing.
     apply H_free_x_Gamma.
     simpl.
     destruct (beq_id y i); left; assumption.
-- eapply IHt1 in H8.
-  + eapply IHt2 in H9.
-    * { eapply IHt3 in H11.
+- eapply IHt1 in H9.
+  + eapply IHt2 in H10.
+    * { eapply IHt3 in H12.
         - eapply T_ComFrom; eassumption.
         - intros y H_free_y.
           apply H_free_x_Delta.

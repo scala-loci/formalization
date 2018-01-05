@@ -250,6 +250,7 @@ Inductive has_type : context -> t -> T -> Prop :=
         | T_Comp: forall context,
                   forall x t0 t1 T0 T1 T2 P0 P1,
             transmittable_type T1 ->
+            transmittable_type T0 ->
             (P0 = (getPeer context)) ->   (* just for better readability *)
             context |- t0 \in T0 ->
             (remoteContextWithBinding P1 x T0 context) |- t1 \in T1 ->
@@ -260,6 +261,7 @@ Inductive has_type : context -> t -> T -> Prop :=
         | T_ComFrom:  forall context,
                       forall x t0 t1 t2 T0 T1 P0 P1,
             transmittable_type T1 ->
+            transmittable_type T0 ->
             (P0 = (getPeer context)) ->   (* just for better readability *)
             context |- t0 \in T0 ->
             (remoteContextWithBinding P1 x T0 context) |- t1 \in T1 ->

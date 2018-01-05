@@ -378,7 +378,7 @@ Example testLocalStep_EAsLocal_1:
 Proof.
   eapply E_AsLocal.
   - reflexivity.
-  - apply w_unit.
+  - apply v_unit.
   - reflexivity.
   - reflexivity.
 Qed.
@@ -387,7 +387,7 @@ Qed.
 Example testLocalStep_EComp_1:
   testTies1Context |> asLocalIn (Id "x") (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps"))
     L==> Right _ _ (asLocal unit (*:*) (Unit on (Peer "ps"))).
-Proof. apply E_Comp, w_unit. Qed.
+Proof. apply E_Comp, v_unit. Qed.
 
 
 Example testLocalStep_ERemote_1:
@@ -404,13 +404,13 @@ Qed.
 Example testLocalStep_EAsLocalFrom_1:
   testTies1Context |> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))
     L==> Right _ _ unit.
-Proof. apply E_AsLocalFrom, w_unit. Qed.
+Proof. apply E_AsLocalFrom, v_unit. Qed.
 
 
 Example testLocalStep_ECompFrom_1:
   testTies1Context |> asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))
     L==> Right _ _ (asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2))).
-Proof. apply E_CompFrom, w_unit. Qed.
+Proof. apply E_CompFrom, v_unit. Qed.
 
 
 Example testLocalStep_ERemoteFrom_1:

@@ -195,16 +195,6 @@ Inductive value : t -> Prop :=
   | v_reactApp : forall r, value (reactApp r)
   | v_tnat : forall n, value (tnat n).
 
-Inductive transmittable_value : t -> Prop :=
-  | w_unit : transmittable_value unit
-  | w_none : forall T, transmittable_value (none T)
-  | w_some : forall t, transmittable_value t -> transmittable_value (some t)
-  | w_nil : forall T, transmittable_value (nil T)
-  | w_cons : forall t0 t1, transmittable_value t0 -> transmittable_value t1 -> transmittable_value (cons t0 t1)
-  | w_peerApp : forall p, transmittable_value (peerApp p)
-  | w_reactApp : forall r, transmittable_value (reactApp r)
-  | w_tnat : forall n, transmittable_value (tnat n).
-
 Inductive transmittable_type : T -> Prop :=
   | U_Unit : transmittable_type Unit
   | U_Option : forall T, transmittable_type T -> transmittable_type (Option T)

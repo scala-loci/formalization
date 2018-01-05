@@ -4,7 +4,6 @@ Require Import ReTierDynamicSemantics.
 Require Import ReTierProofContext.
 Require Import ReTierProofSubstitution.
 Require Import ReTierProofAggregation.
-Require Import ReTierProofSubstitution.
 
 
 
@@ -81,6 +80,7 @@ Lemma preservation_nonReactive: forall t t' T statContext dynContext,
 *)
 
 
+(*
 Lemma transmittable_peer_invariant: forall t T typing ties reactEnv placeEnv varEnv P P',
   transmittable_value t ->
   transmittable_type T ->
@@ -260,6 +260,7 @@ Proof.
 
 *)
 Admitted.
+*)
 
 Lemma preservation_nonReactive: forall t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys,
   Context typing ties reactEnv placeEnv varEnv P |- t \in T -> 
@@ -332,6 +333,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
     * assumption.
     * assumption.
     * eapply transmittable_value_typing in H3; eassumption.
+    * eapply transmittable_value_typing; eassumption.
   + inversion H10.
     subst.
     eapply T_AsLocal.
@@ -361,7 +363,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
       |  |  |  |  |  |  |  | ].
     subst.
     simpl in Hstat_targ_P1. simpl in Htied_P_P1.
-    eapply transmittable_peer_invariant; eassumption.
+    eapply transmittable_value_typing; eassumption.
   + subst.
     clear Htaut.
     symmetry in HcontextTmp. inversion HcontextTmp. subst. clear HcontextTmp.
@@ -401,13 +403,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   + reflexivity.
   + simpl. eapply substitution_t.
     * eassumption.
-    * { eapply transmittable_peer_invariant_gen.
-        - assumption.
-        - eapply transmittable_value_type.
-          + eassumption.
-          + eassumption.
-        - eassumption.
-      }
+    * eapply transmittable_value_typing; eassumption.
   + simpl. assumption.
   + auto.
   

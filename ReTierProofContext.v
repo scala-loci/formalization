@@ -54,8 +54,8 @@ Qed.
 
 
 Lemma appears_free_locally_or_remotely : forall t x,
-    appears_free_in_t_locality x t RemoteVar ->
-    appears_free_in_t_locality x t LocalOrRemoteVar.
+  appears_free_in_t_locality x t RemoteVar ->
+  appears_free_in_t_locality x t LocalOrRemoteVar.
 Proof.
 intros t x H.
 induction t; simpl; simpl in H.
@@ -104,11 +104,11 @@ Qed.
 
 
 Lemma free_in_context_t : forall typing ties Psi Delta Gamma P t T x,
-   Context typing ties Psi Delta Gamma P |- t \in T ->
-   (appears_free_in_t_locality x t LocalOrRemoteVar ->
-    exists T' P', Gamma x = Some T' \/ Delta x = Some (T' on P')) /\
-   (appears_free_in_t_locality x t RemoteVar ->
-    exists T' P', Delta x = Some (T' on P')).
+  Context typing ties Psi Delta Gamma P |- t \in T ->
+  (appears_free_in_t_locality x t LocalOrRemoteVar ->
+   exists T' P', Gamma x = Some T' \/ Delta x = Some (T' on P')) /\
+  (appears_free_in_t_locality x t RemoteVar ->
+   exists T' P', Delta x = Some (T' on P')).
 Proof.
 intros until x.
 intros H_typing.

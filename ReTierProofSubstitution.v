@@ -51,7 +51,7 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
     intros.
     split; try reflexivity.
     unfold idUpdate, Maps.p_update, Maps.t_update.
-    case (beq_id x i); reflexivity.
+    destruct (beq_id x i); reflexivity.
   + eapply T_Abs, IHt; try assumption.
     right.
     split; try assumption.
@@ -420,23 +420,21 @@ induction s; (intros; inversion H; subst; simpl).
     * apply beq_id_eq in H_eq_x.
       subst.
       eapply context_invariance_s; try eassumption.
-      intros.
+      intros y H_free_y.
       unfold idUpdate, Maps.p_update, Maps.t_update.
-      case_eq (beq_id x i); try reflexivity.
+      destruct (beq_id y i); reflexivity.
     * eapply substitution_s_generalized; try eassumption.
       unfold emptyVarEnv, idEmpty, Maps.p_empty.
       reflexivity.
   + eapply T_Place.
     * eapply IHs; try eassumption.
-      simpl in H4.
       eapply context_invariance_s; try eassumption.
-      intros.
+      intros y H_free_y.
       unfold idUpdate, Maps.p_update, Maps.t_update.
-      case_eq (beq_id x0 i); try reflexivity.
-      intros H_eq_x0.
-      apply beq_id_eq in H_eq_x0.
-      symmetry in H_eq_x0.
-      subst.
+      case_eq (beq_id y i); try reflexivity.
+      intros H_eq_y.
+      apply beq_id_eq in H_eq_y.
+      rewrite <- H_eq_y in H_eq_x.
       rewrite beq_id_comm in H_eq_x.
       rewrite H_eq_x.
       reflexivity.

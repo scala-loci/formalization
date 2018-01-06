@@ -8,18 +8,18 @@ Require Import ReTierProofAggregation.
 
 
 
-Lemma tied_not_None: forall context P1 P2,
-  areTied context P1 P2 = true -> getTieMult context (P1, P2) <> None.
+Lemma tied_not_None: forall ties P1 P2,
+  areTied ties P1 P2 = true -> ties (P1, P2) <> None.
 Proof.
-  intros context P1 P2. destruct context as [typing ties reacEnv placeEnv varEnv].
-  unfold areTied. simpl. destruct (ties (P1, P2)).
+  intros ties P1 P2.
+  unfold areTied. destruct (ties (P1, P2)).
   1-2: intros; congruence.
 Qed.
 
-Lemma tied_not_SomeMNone: forall context P1 P2,
-  areTied context P1 P2 = true -> getTieMult context (P1, P2) <> (Some mNone).
+Lemma tied_not_SomeMNone: forall ties P1 P2,
+  areTied ties P1 P2 = true -> ties (P1, P2) <> (Some mNone).
 Proof.
-  intros context P1 P2. destruct context as [typing ties reacEnv placeEnv varEnv].
+  intros ties P1 P2.
   unfold areTied. simpl. destruct (ties (P1, P2)).
 
   1-2: unfold not; intros.
@@ -32,9 +32,9 @@ Qed.
 
 Lemma substitution_t_relaxed:
   forall typing ties Psi Delta Gamma P x t T v U,
-  Context typing ties Psi Delta (idUpdate x U Gamma) P |- t \in T ->
-  Context typing ties Psi Delta Gamma P |- v \in U ->
-  Context typing ties Psi Delta Gamma P |- [x :=_t v] t \in T.
+  typing; ties; Psi; Delta; idUpdate x U Gamma; P |- t : T ->
+  typing; ties; Psi; Delta; Gamma; P |- v : U ->
+  typing; ties; Psi; Delta; Gamma; P |- [x :=_t v] t : T.
 Admitted.
 
 
@@ -262,17 +262,17 @@ Proof.
 Admitted.
 *)
 
-Lemma preservation_nonReactive: forall t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys,
-  Context typing ties reactEnv placeEnv varEnv P |- t \in T -> 
-  LeContext ties typing peerInsts P reactSys |> t L==> Right _ _ t' ->
-  Context typing ties reactEnv placeEnv varEnv P |- t' \in T.
+Lemma preservation_nonReactive: forall t t' T peerInsts typing ties Psi Delta Gamma P rho,
+  typing; ties; Psi; Delta; Gamma; P |- t : T -> 
+  LeContext ties typing peerInsts P rho |> t L==> Right _ _ t' ->
+  typing; ties; Psi; Delta; Gamma; P |- t' : T.
 Proof.
-intros t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys.
+intros t t' T peerInsts typing ties Psi Delta Gamma P rho.
 intros H_stat H_dyn.
 generalize dependent P.
 generalize dependent T.
 generalize dependent t'.
-generalize dependent varEnv.
+generalize dependent Gamma.
 induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
                   | fct IHfct arg IHarg   (* app    : t -> t -> t *)
                   | x         (* idApp  : id -> t *)
@@ -299,7 +299,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
 - (* app *)
   intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn. inversion H_stat.
-  rewrite <- H in H8. inversion H8. simpl in H13.
+  rewrite <- H in H13. inversion H13.
   apply substitution_t_relaxed with (U := T2). (* lemma has no proof yet... useless if not povable *)
   + assumption.
   + assumption.
@@ -322,23 +322,23 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   inversion H_stat.
   subst.
 
-  apply tied_not_None in H5 as H2.
-  apply tied_not_SomeMNone in H5 as H4.
+  apply tied_not_None in H9 as H3.
+  apply tied_not_SomeMNone in H9 as H4.
   inversion H_dyn.
-  + inversion H10.
+  + inversion H14.
+    inversion H8.
     apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := targ) (v_type := T1); subst.
-    * apply H2.
-    * apply H4.
-    * unfold getTies. symmetry. assumption.
     * assumption.
     * assumption.
-    * eapply transmittable_value_typing in H3; eassumption.
+    * symmetry. assumption.
+    * assumption.
+    * assumption.
+    * eapply transmittable_value_typing in H2; eassumption.
     * eapply transmittable_value_typing; eassumption.
-  + inversion H10.
+  + inversion H8.
     subst.
     eapply T_AsLocal.
     * assumption.
-    * reflexivity.
     * apply IHtarg; assumption.
     * assumption.
     * assumption.
@@ -346,37 +346,15 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
 
 - (* asLocalFrom *)
   intros varEnv t' T P Hstat Hdyn.
-  inversion Hdyn as [ | | | |
-                      context v T0 P1 p Htrans_targ Hcontext Heq_v_targ Heq_targ_t' 
-                      Htaut
-                      | |
-                      context t targ' Targ P1 tfromTmp contextTmp tiesTmp
-                      typingTmp peerInstsTmp Ptmp reactSysTmp
-                      HcontextTmp H0tmp Hdyn_targ H2tmp H3tmp H4tmp Htaut
-                      | | | | ].
-  + clear Htaut. symmetry in Heq_targ_t'. subst.
-    inversion Hstat as 
-    [ |  |  |  |  |  |  |  |  |  |
-      contextTmp P2tmp P3tmp t1tmp t2tmp Htmp Htrans_T H1tmp 
-      Hstat_targ_P1 Htied_P_P1 Hstat_tfrom
-      H5tmp H6tmp H7tmp
-      |  |  |  |  |  |  |  | ].
+  inversion Hdyn; subst.
+  + inversion Hstat.
     subst.
-    simpl in Hstat_targ_P1. simpl in Htied_P_P1.
     eapply transmittable_value_typing; eassumption.
-  + subst.
-    clear Htaut.
-    symmetry in HcontextTmp. inversion HcontextTmp. subst. clear HcontextTmp.
-    inversion Hstat as 
-    [ |  |  |  |  |  |  |  |  |  |
-      contextTmp P2tmp P3tmp t1tmp t2tmp Htmp Htrans_T H1tmp 
-      Hstat_targ_P1 Htied_P_P1 Hstat_tfrom
-      H5tmp H6tmp H7tmp
-      |  |  |  |  |  |  |  | ].
-    subst. simpl in Hstat_targ_P1. simpl in Htied_P_P1.
+  + inversion Hstat.
+    inversion H4.
+    subst.
     eapply T_AsLocalFrom.
     * assumption.
-    * reflexivity.
     * simpl. apply IHtarg; assumption.
     * simpl. assumption.
     * assumption.
@@ -384,24 +362,14 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
     
 - (* asLocalIn *)
   intros varEnv t' T P Hstat Hdyn.
-  inversion Hdyn as [ |  | 
-                      context tmp1 tmp2 tm3 Tin Pin Htrans Hcontext Htmp1 Ht' Htaut
-                    |  |  |  |  |  |  |  | ].
+  inversion Hdyn.
+  inversion Hstat.
   subst.
-  clear Htaut.
-  inversion Hstat as
-  [ |  |  |  |  |  |  |  |  |  |  |
-    context xTmp tTmp1 tTmp2
-    Tassign
-    Ttmp2 Ttmp3 Ptmp1 Ptmp2
-    Htrans_ Htmp1 Hstat_tassign Hstat_tin Htied_P_Pin Hphi
-    Htmp2 Htmp3 Htmp4
-    |  |  |  |  |  |  | ].
-  subst. simpl in Htied_P_Pin. simpl in Hphi. (* simpl in Hstat_tin. (*?*) *)
+  inversion H10.
+  subst.
   eapply T_AsLocal.
   + assumption.
-  + reflexivity.
-  + simpl. eapply substitution_t.
+  + eapply substitution_t.
     * eassumption.
     * eapply transmittable_value_typing; eassumption.
   + simpl. assumption.
@@ -418,10 +386,10 @@ Admitted.
 (*
 (* stronger formulation *)
 Lemma preservation_nonReactive: forall t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys,
-    Context typing ties reactEnv placeEnv varEnv P |- t \in T -> 
+    typing; ties; Psi; Delta; Gamma; P |- t \in T -> 
     LeContext ties typing peerInsts P reactSys |> t L==> Right _ _ t' ->
     exists T',
-    Context typing ties reactEnv placeEnv varEnv P |- t' \in T'.
+    typing; ties; Psi; Delta; Gamma; P |- t' \in T'.
 Proof.
   intros t t' T peerInsts typing ties reactEnv placeEnv varEnv P reactSys.
   destruct t as [ x Tx body (* lambda : id -> T -> t -> t *)

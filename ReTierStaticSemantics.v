@@ -23,139 +23,27 @@ Definition emptyVarEnv: varEnv := idEmpty.
  ----------------------------------------------------------------------------
   Below we use the following notation taken from the informal specification.
 
-  Psi   : typing environment for reactives       
+  Psi   : typing environment for reactives
   Delta : typing environment for placed variables
   Gamma : typing environment for variables
   P     : current peer
  ----------------------------------------------------------------------------
 **)
 
+Reserved Notation "peerTyping ; Ties ; Psi ; Delta ; Gamma ; P |- t : T"
+  (at level 40,
+   Ties at next level, Psi at next level, Delta at next level,
+   Gamma at next level, P at next level, t at next level).
 
-
-Reserved Notation "plContext |~ s" (at level 40).
-
-
-
-(** Notation seems to work only for at most two arguments on the left.
-    Hence we have to encapsulate all environments in an ADT instance.
-    See env or context below. **)
-Reserved Notation "context '|-' t '\in' T" (at level 40).
-
-(*
-Inductive env: Type :=
-  | Env: reactEnv -> placeEnv -> varEnv -> env.
-*)
-
-(* ----------------------------------------------------------------------- *)
-
-(** context parameter for prop [plt_isWellTyped] **)
-Inductive placementContext :=
-  | PlacementContext: peerTyping ->Ties -> reactEnv -> placeEnv -> placementContext.
-Definition emptyPlContext := PlacementContext noPeers noTies emptyReactEnv emptyPlaceEnv.
-
-
-(** auxiliary functions for the manipulation of [placementContext] **)
-Definition addPlVarDec (x: id) (type: S) (plContext: placementContext): placementContext :=
-  match plContext with
-  | PlacementContext pT t r pl => PlacementContext pT t r (idUpdate x type pl)
-  end.
-
-
-
-
-(* ----------------------------------------------------------------------- *)
-
-
-
-
-(** context for prop [has_type] **)
-Inductive context: Type :=
-  | Context: peerTyping -> Ties -> reactEnv -> placeEnv -> varEnv -> P -> context.
-Definition emptyContext := Context noPeers noTies emptyReactEnv emptyPlaceEnv emptyVarEnv (Peer "dummy").
-
-
-(** auxiliary functions for the manipulation of [context] **)
-
-(** getters **)
-  Definition getVarEnv (c: context): varEnv :=
-    match c with
-    | Context _ _ _ _ vars _ => vars
-    end.
-
-  Definition getPlaceEnv (c: context): placeEnv :=
-    match c with
-    | Context _ _ _ placedVars _ _ => placedVars
-    end.
-
-  Definition getReactEnv (c: context): reactEnv :=
-    match c with
-    | Context _ _ reactEnv _ _ _ => reactEnv
-    end.
-
-  Definition getPeer (c: context): P :=
-    match c with
-    | Context _ _ _ _ _ p => p
-    end.
-
-  Definition getTies (c: context): Ties :=
-    match c with
-    | Context _ ties _ _ _ _ => ties
-    end.
-
-  Definition getTieMult (c: context) (p: P*P): (option multiplicity) :=
-    (getTies c) p.
-
-  Definition getPeerType (c: context) (peerInst: p): (option P) :=
-    match c with
-    | Context peerTyping _ _ _ _ _ => peerTyping peerInst
-    end.
-
-  Definition getReactType (c: context) (react: r): (option T) :=
-    match c with
-    | Context _ _ reactEnv _ _ _ => reactEnv react
-    end.
-
-(** add variable declarations to context **)
-  Definition addVarDec (x: id) (type: T) (cont: context): context :=
-    match cont with
-    | Context pT t r pl vars p => Context pT t r pl (idUpdate x type vars) p
-    end.
-
-  Definition remoteContext (p: P) (cont: context): context :=
-    match cont with
-    | Context pT t r pl vars _ => Context pT t r pl emptyVarEnv p
-    end.
-
-  Definition remoteContextWithBinding (p: P) (x: id) (type: T) (cont: context): context :=
-    match cont with
-    | Context pT t r pl vars _ => Context pT t r pl (idUpdate x type emptyVarEnv) p
-    end.
-
-
-(** conversions from partial data to full [context] **)
-  Definition plcToContext (plContext: placementContext) (currentPeer: P): context :=
-    match plContext with
-    | PlacementContext pT t r pl => Context pT t r pl emptyVarEnv currentPeer
-    end.
-
-  Definition reToContext (re: reactEnv) (p: P): context :=
-    Context noPeers noTies re emptyPlaceEnv emptyVarEnv p.
-
-  Definition peToContext (pe: placeEnv) (p: P): context :=
-    Context noPeers noTies emptyReactEnv pe emptyVarEnv p.
-
-  Definition veToContext (ve: varEnv) (p: P): context :=
-    Context noPeers noTies emptyReactEnv emptyPlaceEnv ve p.
-
-  Definition tiesToContext (ties: Ties) (p: P): context :=
-    Context noPeers ties emptyReactEnv emptyPlaceEnv emptyVarEnv p.
+Reserved Notation "peerTyping ; Ties ; Psi ; Delta |- s"
+  (at level 40, Ties at next level, Psi at next level, Delta at next level).
 
 
 
 (** auxiliary functions for aggegation **)
 
-  Definition phi (c: context) (p0 p1: P) (type: T) :=
-    match getTieMult c (p0, p1) with
+  Definition phi (ties: Ties) (p0 p1: P) (type: T) :=
+    match ties (p0, p1) with
     | Some multiple => Some (List type)
     | Some optional => Some (Option type)
     | Some single   => Some type
@@ -167,154 +55,127 @@ Definition emptyContext := Context noPeers noTies emptyReactEnv emptyPlaceEnv em
 
 (* --------------------------------------------------------------------- *)
 
-
-Definition areTied (c: context) (p1 p2: P): bool :=
-  match getTieMult c (p1, p2) with
+Definition areTied (ties: Ties) (p1 p2: P): bool :=
+  match ties (p1, p2) with
   | None        => false
   | Some mNone  => false
   | Some _      => true
   end.
-  
 
 
-(* TODO: implement rule T-Peer *)
 
-Inductive has_type : context -> t -> T -> Prop :=
+Inductive typing_t : peerTyping -> Ties -> reactEnv -> placeEnv -> varEnv -> P -> t -> T -> Prop :=
+
   (* rules for local evaluation *)
-      | T_Var:  forall context,
-                  forall x T,
-            ((getVarEnv context) x = Some T \/
-             ((getVarEnv context) x = None) /\
-              (getPlaceEnv context) x = Some (T on (getPeer context))) ->
-            context |- (idApp x) \in T
 
-        | T_App:  forall context,
-                  forall t1 t2 T1 T2,
-            context |- t1 \in (T2 ~> T1) ->
-            context |- t2 \in T2 ->
-            context |- app t1 t2 \in T1
+  | T_Var: forall peerTyping ties Psi Delta Gamma P x T,
+      Gamma x = Some T \/ Gamma x = None /\ Delta x = Some (T on P) ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- (idApp x) : T
 
-        | T_Abs:  forall context,
-                  forall x T1 t T2,
-            (addVarDec x T1 context) |- t \in T2 ->
-            context |- (lambda x T1 t) \in (Arrow T1 T2)
+  | T_App: forall peerTyping ties Psi Delta Gamma P t1 t2 T1 T2,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t1 : T2 ~> T1 ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- t2 : T2 ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- app t1 t2 : T1
 
-        | T_Cons: forall context,
-                  forall t0 t1 T,
-            context |- t0 \in T ->
-            context |- t1 \in List T ->
-            context |- (cons t0 t1) \in List T
+  | T_Abs: forall peerTyping ties Psi Delta Gamma P x t T1 T2,
+      peerTyping; ties; Psi; Delta; idUpdate x T1 Gamma; P |- t : T2 ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- lambda x T1 t : T1 ~> T2
 
-        | T_Nil:  forall context,
-                  forall T,
-            context |- (nil T) \in List T
+  | T_Cons: forall peerTyping ties Psi Delta Gamma P t0 t1 T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t0 : T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- t1 : List T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- cons t0 t1 : List T
 
-        | T_Some: forall context,
-                  forall t T,
-            context |- t \in T ->
-            context |- (some t) \in Option T
+  | T_Nil: forall peerTyping ties Psi Delta Gamma P T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- nil T : List T
 
-        | T_None: forall context,
-                  forall T,
-            context |- none T \in Option T
+  | T_Some: forall peerTyping ties Psi Delta Gamma P t T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t : T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- some t : Option T
 
-        | T_Unit: forall context,
-            context |- unit \in Unit
+  | T_None: forall peerTyping ties Psi Delta Gamma P T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- none T : Option T
 
-        
+  | T_Unit: forall peerTyping ties Psi Delta Gamma P,
+      peerTyping; ties; Psi; Delta; Gamma; P |- unit : Unit
+
   (* rules for remote access *)
 
-        | T_Peer: forall context,
-                  forall p P1,
-            Some P1 = (getPeerType context p) ->
-            context |- peerApp p \in Remote P1
+  | T_Peer: forall peerTyping ties Psi Delta Gamma P0 P1 p,
+      peerTyping p = Some P1 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- peerApp p : Remote P1
 
-        | T_AsLocal: forall context,
-                     forall P0 P1 t T0 T1,
-            transmittable_type T1 ->
-            (P0 = (getPeer context)) ->   (* just for better readability *)
-            (remoteContext P1 context) |- t \in T1 ->
-            (areTied context P0 P1) = true ->
-            (phi context P0 P1 T1) = Some T0 ->
-            context |- (asLocal t (T1 on P1)) \in T0
+  | T_AsLocal: forall peerTyping ties Psi Delta Gamma P0 P1 t T0 T1,
+      transmittable_type T1 ->
+      peerTyping; ties; Psi; Delta; emptyVarEnv; P1 |- t : T1 ->
+      areTied ties P0 P1 = true ->
+      phi ties P0 P1 T1 = Some T0 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- asLocal t (T1 on P1) : T0
 
-        | T_AsLocalFrom: forall context,
-                         forall P0 P1 t0 t1 T,
-            transmittable_type T ->
-            (P0 = (getPeer context)) ->   (* just for better readability *)
-            (remoteContext P1 context) |- t0 \in T ->
-            (areTied context P0 P1) = true ->
-            context |- t1 \in Remote P1 ->
-            context |- asLocalFrom t0 (T on P1) t1 \in T
+  | T_AsLocalFrom: forall peerTyping ties Psi Delta Gamma P0 P1 t0 t1 T,
+      transmittable_type T ->
+      peerTyping; ties; Psi; Delta; emptyVarEnv; P1 |- t0 : T ->
+      areTied ties P0 P1 = true ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- t1 : Remote P1 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- asLocalFrom t0 (T on P1) t1 : T
 
-        | T_Comp: forall context,
-                  forall x t0 t1 T0 T1 T2 P0 P1,
-            transmittable_type T1 ->
-            transmittable_type T0 ->
-            (P0 = (getPeer context)) ->   (* just for better readability *)
-            context |- t0 \in T0 ->
-            (remoteContextWithBinding P1 x T0 context) |- t1 \in T1 ->
-            (areTied context P0 P1) = true ->
-            Some T2 = (phi context P0 P1 T1) ->
-            context |- asLocalIn x t0 t1 (T1 on P1) \in T2
+  | T_Comp: forall peerTyping ties Psi Delta Gamma P0 P1 x t0 t1 T0 T1 T2,
+      transmittable_type T1 ->
+      transmittable_type T0 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- t0 : T0 ->
+      peerTyping; ties; Psi; Delta; idUpdate x T0 emptyVarEnv; P1 |- t1 : T1 ->
+      areTied ties P0 P1 = true ->
+      phi ties P0 P1 T1 = Some T2 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- asLocalIn x t0 t1 (T1 on P1) : T2
 
-        | T_ComFrom:  forall context,
-                      forall x t0 t1 t2 T0 T1 P0 P1,
-            transmittable_type T1 ->
-            transmittable_type T0 ->
-            (P0 = (getPeer context)) ->   (* just for better readability *)
-            context |- t0 \in T0 ->
-            (remoteContextWithBinding P1 x T0 context) |- t1 \in T1 ->
-            (areTied context P0 P1) = true ->
-            context |- t2 \in Remote P1 ->
-            context |- asLocalInFrom x t0 t1 (T1 on P1) t2 \in T1
+  | T_ComFrom: forall peerTyping ties Psi Delta Gamma P0 P1 x t0 t1 t2 T0 T1,
+      transmittable_type T1 ->
+      transmittable_type T0 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- t0 : T0 ->
+      peerTyping; ties; Psi; Delta; idUpdate x T0 emptyVarEnv; P1 |- t1 : T1 ->
+      areTied ties P0 P1 = true ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- t2 : Remote P1 ->
+      peerTyping; ties; Psi; Delta; Gamma; P0 |- asLocalInFrom x t0 t1 (T1 on P1) t2 : T1
 
   (* rules for reactives *)
-        | T_Reactive: forall context,
-                      forall r T,
-            (getReactEnv context) r = Some T -> 
-            context |- (reactApp r) \in T
 
-        | T_Signal:   forall context,
-                      forall t T,
-            context |- t \in T ->
-            context |- signal t \in Signal T
+  | T_Reactive: forall peerTyping ties Psi Delta Gamma P r T,
+      Psi r = Some T -> 
+      peerTyping; ties; Psi; Delta; Gamma; P |- reactApp r : T
 
-        | T_ReactiveVar:  forall context,
-                          forall t T,
-            context |- t \in T ->
-            context |- var t \in Var T
+  | T_Signal: forall peerTyping ties Psi Delta Gamma P t T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t : T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- signal t : Signal T
 
-        | T_Now:  forall context,
-                  forall t T1 T0,
-            (context |- t \in T0) ->
-            (T0 = Signal T1 \/ T0 = Var T1) ->
-            context |- now t \in T1
+  | T_ReactiveVar: forall peerTyping ties Psi Delta Gamma P t T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t : T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- var t : Var T
 
-        | T_Set:  forall context,
-                  forall t1 t2 T,
-            context |- t1 \in Var T ->
-            context |- t2 \in T ->
-            context |- set t1 t2 \in Unit
+  | T_Now: forall peerTyping ties Psi Delta Gamma P t T1 T0,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t : T0 ->
+      T0 = Signal T1 \/ T0 = Var T1 ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- now t : T1
 
-        | T_Nat:  forall context,
-                  forall n: nat,
-            context |- tnat n \in Tnat
+  | T_Set: forall peerTyping ties Psi Delta Gamma P t1 t2 T,
+      peerTyping; ties; Psi; Delta; Gamma; P |- t1 : Var T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- t2 : T ->
+      peerTyping; ties; Psi; Delta; Gamma; P |- set t1 t2 : Unit
 
-where "context '|-' t '\in' T" := (has_type context t T).
+  | T_Nat: forall peerTyping ties Psi Delta Gamma P n,
+      peerTyping; ties; Psi; Delta; Gamma; P |- tnat n : Tnat
 
-Hint Constructors has_type.
+where "peerTyping ; Ties ; Psi ; Delta ; Gamma ; P |- t : T" := (typing_t peerTyping Ties Psi Delta Gamma P t T).
 
-Inductive plt_isWellTyped : placementContext -> s -> Prop :=
-  | T_End:   forall plContext,
-      plContext |~ pUnit
 
-  | T_Place: forall plContext,
-             forall x T P t s,
-      (addPlVarDec x (T on P) plContext) |~ s ->
-      (plcToContext plContext P) |- t \in T ->
-      (plContext |~ (placed x (T on P) t s))
+Inductive typing_s : peerTyping -> Ties -> reactEnv -> placeEnv -> s -> Prop :=
+  | T_End: forall peerTyping ties Psi Delta,
+      peerTyping; ties; Psi; Delta |- pUnit
 
-where "plContext |~ s" := (plt_isWellTyped plContext s).
+  | T_Place: forall peerTyping ties Psi Delta x t s T P,
+      peerTyping; ties; Psi; idUpdate x (T on P) Delta |- s ->
+      peerTyping; ties; Psi; Delta; emptyVarEnv; P |- t : T ->
+      peerTyping; ties; Psi; Delta |- placed x (T on P) t s
+
+where "peerTyping ; Ties ; Psi ; Delta |- s" := (typing_s peerTyping Ties Psi Delta s).
 
 

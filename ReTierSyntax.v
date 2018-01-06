@@ -133,7 +133,7 @@ Inductive T : Type :=
   
   | Tnat   : T.   (* Added to make testing easier. *)
 
-Notation "T1 ~> T2" := (Arrow T1 T2) (at level 80, right associativity).
+Notation "T1 ~> T2" := (Arrow T1 T2) (at level 30, right associativity).
 
 Fixpoint beq_T (a b: T): bool :=
   match (a, b) with

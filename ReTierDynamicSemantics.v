@@ -52,7 +52,7 @@ Fixpoint subst_t x value term: t :=
   | tnat n => tnat n
   end.
 
-Notation "[ id :=_t value ] term" := (subst_t id value term) (at level 40).
+Notation "[ id :=_t value ] term" := (subst_t id value term) (at level 30).
 
 Fixpoint subst_s_locality x value term locality: t :=
   match term with
@@ -98,7 +98,7 @@ Fixpoint subst_s x value term: s :=
   | pUnit => pUnit
   end.
 
-Notation "[ id :=_s value ] term" := (subst_s id value term) (at level 40).
+Notation "[ id :=_s value ] term" := (subst_s id value term) (at level 30).
 
 
 Definition peerInsts := ListSet.set p.
@@ -213,7 +213,7 @@ Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSyste
     (* Added to make testing easier. *)
     | tnat   : nat -> t.
 *)
-Reserved Notation "'[' x ':=' s ']' tm" (at level 40).
+Reserved Notation "'[' x ':=' s ']' tm" (at level 30).
 
 Fixpoint subst (x:id) (s tm: t): t :=
   match tm with

@@ -262,12 +262,12 @@ Proof.
 Admitted.
 *)
 
-Lemma preservation_nonReactive: forall t t' T peerInsts typing ties Psi Delta Gamma P rho,
+Lemma preservation_nonReactive: forall t t' T peerInsts typing ties Psi Delta Gamma P rho rho',
   typing; ties; Psi; Delta; Gamma; P |- t : T -> 
-  LeContext ties typing peerInsts P rho |> t L==> Right _ _ t' ->
+  typing; ties; peerInsts; P |> t; rho ==> t'; rho' ->
   typing; ties; Psi; Delta; Gamma; P |- t' : T.
 Proof.
-intros t t' T peerInsts typing ties Psi Delta Gamma P rho.
+intros t t' T peerInsts typing ties Psi Delta Gamma P rho rho'.
 intros H_stat H_dyn.
 generalize dependent P.
 generalize dependent T.
@@ -299,7 +299,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
 - (* app *)
   intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn. inversion H_stat.
-  rewrite <- H in H13. inversion H13.
+  rewrite <- H in H17. inversion H17.
   apply substitution_t_relaxed with (U := T2). (* lemma has no proof yet... useless if not povable *)
   + assumption.
   + assumption.
@@ -325,19 +325,15 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   apply tied_not_None in H9 as H3.
   apply tied_not_SomeMNone in H9 as H4.
   inversion H_dyn.
-  + inversion H14.
-    inversion H8.
-    apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := targ) (v_type := T1); subst.
+  + apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := targ) (v_type := T1).
     * assumption.
     * assumption.
-    * symmetry. assumption.
+    * assumption.
     * assumption.
     * assumption.
     * eapply transmittable_value_typing in H2; eassumption.
     * eapply transmittable_value_typing; eassumption.
-  + inversion H8.
-    subst.
-    eapply T_AsLocal.
+  + eapply T_AsLocal.
     * assumption.
     * apply IHtarg; assumption.
     * assumption.
@@ -365,7 +361,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   inversion Hdyn.
   inversion Hstat.
   subst.
-  inversion H10.
+  inversion H14.
   subst.
   eapply T_AsLocal.
   + assumption.

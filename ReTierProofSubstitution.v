@@ -5,15 +5,15 @@ Require Import ReTierProofContext.
 
 
 Lemma substitution_t_generalized:
-  forall typing ties Psi Delta Gamma P x t T v U,
+  forall program Psi Delta Gamma P x t T v U,
   (exists P',
    Gamma x = None /\
    (Delta x = None \/ Delta x = Some (U on P')) /\
-   typing; ties; Psi; Delta; Gamma; P |- t : T /\
-   typing; ties; Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U) \/
-  (typing; ties; Psi; Delta; idUpdate x U Gamma; P |- t : T /\
-   typing; ties; Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U) ->
-  typing; ties; Psi; Delta; Gamma; P |- [x :=_t v] t : T.
+   program :: Psi; Delta; Gamma; P |- t : T /\
+   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U) \/
+  (program :: Psi; Delta; idUpdate x U Gamma; P |- t : T /\
+   program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U) ->
+  program :: Psi; Delta; Gamma; P |- [x :=_t v] t : T.
 Proof.
 intros until U.
 intros H_typing.
@@ -76,7 +76,7 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
 - case_eq (beq_id x i); intros H_eq.
   + rewrite beq_id_eq in H_eq.
     subst.
-    destruct H6.
+    destruct H5.
     * congruence.
     * { destruct H.
         destruct H_Delta; try congruence.
@@ -97,9 +97,9 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
 - case_eq (beq_id x i); intros H_eq.
   + rewrite beq_id_eq in H_eq.
     subst.
-    unfold idUpdate, Maps.p_update, Maps.t_update in H6.
-    rewrite beq_id_refl in H6.
-    destruct H6.
+    unfold idUpdate, Maps.p_update, Maps.t_update in H5.
+    rewrite beq_id_refl in H5.
+    destruct H5.
     * { inversion H.
         subst.
         eapply typable_empty_closed_t in H_typing_v as H_closed.
@@ -197,10 +197,10 @@ Qed.
 
 
 Lemma substitution_t:
-  forall typing ties Psi Delta Gamma P x t T v U,
-  typing; ties; Psi; Delta; idUpdate x U Gamma; P |- t : T ->
-  typing; ties; Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U ->
-  typing; ties; Psi; Delta; Gamma; P |- [x :=_t v] t : T.
+  forall program Psi Delta Gamma P x t T v U,
+  program :: Psi; Delta; idUpdate x U Gamma; P |- t : T ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U ->
+  program :: Psi; Delta; Gamma; P |- [x :=_t v] t : T.
 Proof.
 intros.
 eapply substitution_t_generalized.
@@ -209,15 +209,15 @@ Qed.
 
 
 Lemma substitution_s_generalized:
-  forall typing ties Psi Delta Gamma P P' x t T v U,
+  forall program Psi Delta Gamma P P' x t T v U,
   (Gamma x = None ->
-   typing; ties; Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
-   typing; ties; Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
-   typing; ties; Psi; Delta; Gamma; P |- subst_s_locality x v t LocalOrRemoteVar : T) /\
+   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
+   program :: Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
+   program :: Psi; Delta; Gamma; P |- subst_s_locality x v t LocalOrRemoteVar : T) /\
   (Gamma x <> None ->
-   typing; ties; Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
-   typing; ties; Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
-   typing; ties; Psi; Delta; Gamma; P |- subst_s_locality x v t RemoteVar : T).
+   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
+   program :: Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
+   program :: Psi; Delta; Gamma; P |- subst_s_locality x v t RemoteVar : T).
 Proof.
 intros until U.
 generalize dependent Delta.
@@ -246,7 +246,7 @@ induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typi
 - eapply T_App; [ apply IHt1 | apply IHt2 ]; eassumption.
 - eapply T_App; [ apply IHt1 | apply IHt2 ]; eassumption.
 - case_eq (beq_id x i); intros H_eq.
-  + destruct H6.
+  + destruct H5.
     * apply beq_id_eq in H_eq.
       subst.
       congruence.
@@ -266,7 +266,7 @@ induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typi
           contradiction.
       }
   + apply T_Var.
-    destruct H6.
+    destruct H5.
     * left. assumption.
     * right.
       destruct H.
@@ -280,12 +280,12 @@ induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typi
   + apply T_Var.
     apply beq_id_eq in H_eq.
     subst.
-    destruct H6.
+    destruct H5.
     * left. assumption.
     * destruct H.
       congruence.
   + apply T_Var.
-    destruct H6.
+    destruct H5.
     * left. assumption.
     * destruct H.
       unfold idUpdate, Maps.p_update, Maps.t_update in H0.
@@ -398,10 +398,10 @@ Qed.
 
 
 Lemma substitution_s:
-  forall typing ties Psi Delta P x s v U,
-  typing; ties; Psi; idUpdate x (U on P) Delta |- s ->
-  typing; ties; Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U ->
-  typing; ties; Psi; Delta |- [x :=_s v] s.
+  forall program Psi Delta P x s v U,
+  program :: Psi; idUpdate x (U on P) Delta |- s ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U ->
+  program :: Psi; Delta |- [x :=_s v] s.
 Proof.
 intros.
 generalize dependent U.

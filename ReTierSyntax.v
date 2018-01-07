@@ -1,9 +1,6 @@
 Require Import Coq.Strings.String.
-(*
-Require Import Coq.Lists.List.
-*)
-
 Require Import Maps.
+Require Coq.Lists.ListSet.
 
 Inductive id : Type :=
   | Id : string -> id.
@@ -257,50 +254,147 @@ Inductive multiplicity : Type :=
 Inductive tie : Type :=
   | Tie : P -> P -> multiplicity -> tie.
 
-Notation "P1 *-> P2" := (Tie P1 P2 multiple) (at level 20).
-Notation "P1 ?-> P2" := (Tie P1 P2 optional) (at level 20).
-Notation "P1 S-> P2" := (Tie P1 P2 single) (at level 20).
-Notation "P1 N-> P2" := (Tie P1 P2 mNone) (at level 20).
+Notation "P1 *-> P2" := (Tie (Peer P1) (Peer P2) multiple) (at level 20).
+Notation "P1 ?-> P2" := (Tie (Peer P1) (Peer P2) optional) (at level 20).
+Notation "P1 S-> P2" := (Tie (Peer P1) (Peer P2) single) (at level 20).
+Notation "P1 N-> P2" := (Tie (Peer P1) (Peer P2) mNone) (at level 20).
 
-Example testNotation_multipleTie: Peer "x" *-> Peer "y" = Tie (Peer "x") (Peer "y") multiple.
+Example testNotation_multipleTie: "x" *-> "y" = Tie (Peer "x") (Peer "y") multiple.
 Proof. reflexivity. Qed.
-Example testNotation_optionalTie: Peer "x" ?-> Peer "y" = Tie (Peer "x") (Peer "y") optional.
+Example testNotation_optionalTie: "x" ?-> "y" = Tie (Peer "x") (Peer "y") optional.
 Proof. reflexivity. Qed.
-Example testNotation_singleTie: Peer "x" S-> Peer "y" = Tie (Peer "x") (Peer "y") single.
+Example testNotation_singleTie: "x" S-> "y" = Tie (Peer "x") (Peer "y") single.
 Proof. reflexivity. Qed.
-Example testNotation_noneTie: Peer "x" N-> Peer "y" = Tie (Peer "x") (Peer "y") mNone.
+Example testNotation_noneTie: "x" N-> "y" = Tie (Peer "x") (Peer "y") mNone.
 Proof. reflexivity. Qed.
 
 
-Definition Ties := partial_map (P*P) multiplicity.
-Definition noTies: Ties := @p_empty (P*P) multiplicity.
+Definition ties := partial_map (P*P) multiplicity.
+Definition NoTies: ties := @p_empty (P*P) multiplicity.
 Definition beq_pPair (x y: P*P): bool :=
   match (x, y) with
   | ((px1, px2), (py1, py2)) => andb (beq_peerType px1 py1) (beq_peerType px2 py2)
   end.
-Definition tie_update (x: tie) (m: Ties) :=
+Definition tie_update (x: tie) (m: ties): ties :=
   match x with
   | Tie p1 p2 mult => @p_update (P*P) multiplicity beq_pPair m (p1, p2) mult
   end.
 
-Example test_tieUpdate_1: (tie_update (Peer "x" S-> Peer "y") noTies) (Peer "x", Peer "y") = Some single.
+Example test_tieUpdate_1: (tie_update ("x" S-> "y") NoTies) (Peer "x", Peer "y") = Some single.
 Proof. reflexivity. Qed.
 
+Notation "'Ties' [ ]" := NoTies (at level 50).
 
-Definition peerTyping := partial_map p P.
-Definition noPeers := @p_empty p P.
-Definition pT_update (inst: p) (type: P) (typing: peerTyping) : peerTyping :=
-    p_update beq_peerInst typing inst type.
+Notation "'Ties' [ t , .. , u ]" :=
+  (tie_update t .. (tie_update u NoTies) ..)
+  (at level 50).
 
-Example test_peerTypingUpdate_1: (pT_update (PeerInst 1) (Peer "x")
-                                    (pT_update (PeerInst 2) (Peer "y")
-                                      noPeers)) (PeerInst 2) = Some (Peer "y").
+
+Definition typed_peer_instances := ListSet.set (p * P).
+
+Definition NoTypedInstances: typed_peer_instances := Datatypes.nil.
+
+Fixpoint typed_peer_instances_add
+    (peer: (p * P)) (instances: typed_peer_instances): typed_peer_instances :=
+  match instances, peer with
+  | Datatypes.nil, _ => Datatypes.cons peer Datatypes.nil
+  | Datatypes.cons (p', P') instances, (p, P) =>
+    if beq_peerInst p p'
+      then typed_peer_instances_add peer instances
+      else Datatypes.cons (p', P') (typed_peer_instances_add peer instances)
+  end.
+
+Fixpoint typed_peer_instances_type
+    (instances: typed_peer_instances) (p: p): option P :=
+  match instances with
+  | Datatypes.nil => None
+  | Datatypes.cons (p', P') instances =>
+    if beq_peerInst p p'
+      then Some P'
+      else typed_peer_instances_type instances p
+  end.
+
+Fixpoint typed_peer_instances_all
+    (instances: typed_peer_instances): ListSet.set p :=
+  match instances with
+  | Datatypes.nil =>
+    Datatypes.nil
+  | Datatypes.cons (p, _) instances =>
+    Datatypes.cons p (typed_peer_instances_all instances)
+  end.
+
+Fixpoint typed_peer_instances_of_type
+    (instances: typed_peer_instances) (P: P): ListSet.set p :=
+  match instances with
+  | Datatypes.nil =>
+    Datatypes.nil
+  | Datatypes.cons (p', P') instances =>
+    if beq_peerType P P'
+      then Datatypes.cons p' (typed_peer_instances_of_type instances P)
+      else typed_peer_instances_of_type instances P
+  end.
+
+Example test_peerTypingUpdate_1: typed_peer_instances_type
+                                    (typed_peer_instances_add (PeerInst 1, Peer "x")
+                                      (typed_peer_instances_add (PeerInst 2, Peer "y")
+                                        NoTypedInstances))
+                                    (PeerInst 2) = Some (Peer "y").
 Proof. reflexivity. Qed.
 
+Notation "p : P" := (PeerInst p, Peer P) (at level 40).
 
-(** named 'l' in informal specification **)
-Inductive program : Type :=
-  | Prog : peerTyping -> Ties -> s -> program.
+Notation "'TypedInstances' [ ]" := NoTypedInstances (at level 50).
+
+Notation "'TypedInstances' [ p , .. , q ]" :=
+  (typed_peer_instances_add p .. (typed_peer_instances_add q NoTypedInstances) ..)
+  (at level 50).
+
+
+Definition peer_instances := ListSet.set p.
+
+Definition NoInstances: peer_instances := ListSet.empty_set p.
+
+Definition eq_peer_instances_dec : forall x y : p, {x = y} + {x <> y}.
+  repeat decide equality.
+Defined.
+
+Definition peer_instances_add
+  (instance: p) (instances: ListSet.set p): ListSet.set p :=
+  ListSet.set_add eq_peer_instances_dec instance instances.
+
+Notation "'Instances' [ ]" := NoInstances (at level 50).
+
+Notation "'Instances' [ i , .. , j ]" :=
+  (peer_instances_add (PeerInst i) .. (peer_instances_add (PeerInst j) NoInstances) ..)
+  (at level 50).
+
+
+Inductive program := Program : ties -> typed_peer_instances -> program.
+
+Definition peer_ties program: ties :=
+  match program with Program ties _ => ties end.
+
+Definition peer_instances_all program: ListSet.set p :=
+  match program with
+    Program _ instances => typed_peer_instances_all instances
+  end.
+
+Definition peer_instances_of_type program P: ListSet.set p :=
+  match program with
+    Program _ instances => typed_peer_instances_of_type instances P
+  end.
+
+Definition peer_instance_type program p: option P :=
+  match program with
+    Program _ instances => typed_peer_instances_type instances p
+  end.
+
+Definition are_peers_tied program P0 P1: Prop :=
+  match (peer_ties program) (P0, P1) with
+  | None        => False
+  | Some mNone  => False
+  | Some _      => True
+  end.
 
 
 Inductive var_locality : Type := LocalOrRemoteVar | RemoteVar.

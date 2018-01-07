@@ -8,19 +8,19 @@ Require Import ReTierProofAggregation.
 
 
 
-Lemma tied_not_None: forall ties P1 P2,
-  areTied ties P1 P2 = true -> ties (P1, P2) <> None.
+Lemma tied_not_None: forall program P1 P2,
+  are_peers_tied program P1 P2 -> (peer_ties program) (P1, P2) <> None.
 Proof.
-  intros ties P1 P2.
-  unfold areTied. destruct (ties (P1, P2)).
+  intros program P1 P2.
+  unfold are_peers_tied. destruct ((peer_ties program) (P1, P2)).
   1-2: intros; congruence.
 Qed.
 
-Lemma tied_not_SomeMNone: forall ties P1 P2,
-  areTied ties P1 P2 = true -> ties (P1, P2) <> (Some mNone).
+Lemma tied_not_SomeMNone: forall program P1 P2,
+  are_peers_tied program P1 P2 -> (peer_ties program) (P1, P2) <> (Some mNone).
 Proof.
-  intros ties P1 P2.
-  unfold areTied. simpl. destruct (ties (P1, P2)).
+  intros program P1 P2.
+  unfold are_peers_tied. simpl. destruct ((peer_ties program) (P1, P2)).
 
   1-2: unfold not; intros.
   1: destruct m.
@@ -31,10 +31,10 @@ Qed.
 
 
 Lemma substitution_t_relaxed:
-  forall typing ties Psi Delta Gamma P x t T v U,
-  typing; ties; Psi; Delta; idUpdate x U Gamma; P |- t : T ->
-  typing; ties; Psi; Delta; Gamma; P |- v : U ->
-  typing; ties; Psi; Delta; Gamma; P |- [x :=_t v] t : T.
+  forall program Psi Delta Gamma P x t T v U,
+  program :: Psi; Delta; idUpdate x U Gamma; P |- t : T ->
+  program :: Psi; Delta; Gamma; P |- v : U ->
+  program :: Psi; Delta; Gamma; P |- [x :=_t v] t : T.
 Admitted.
 
 
@@ -262,12 +262,12 @@ Proof.
 Admitted.
 *)
 
-Lemma preservation_nonReactive: forall t t' T peerInsts typing ties Psi Delta Gamma P rho rho',
-  typing; ties; Psi; Delta; Gamma; P |- t : T -> 
-  typing; ties; peerInsts; P |> t; rho ==> t'; rho' ->
-  typing; ties; Psi; Delta; Gamma; P |- t' : T.
+Lemma preservation_nonReactive: forall t t' T theta program Psi Delta Gamma P rho rho',
+  program :: Psi; Delta; Gamma; P |- t : T -> 
+  program :: theta : P |> t; rho ==> t'; rho' ->
+  program :: Psi; Delta; Gamma; P |- t' : T.
 Proof.
-intros t t' T peerInsts typing ties Psi Delta Gamma P rho rho'.
+intros t t' T theta program Psi Delta Gamma P rho rho'.
 intros H_stat H_dyn.
 generalize dependent P.
 generalize dependent T.
@@ -299,7 +299,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
 - (* app *)
   intros varEnv t' T P. intros H_stat H_dyn. inversion H_dyn. inversion H_stat.
-  rewrite <- H in H17. inversion H17.
+  rewrite <- H in H15. inversion H15.
   apply substitution_t_relaxed with (U := T2). (* lemma has no proof yet... useless if not povable *)
   + assumption.
   + assumption.
@@ -322,15 +322,16 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   inversion H_stat.
   subst.
 
-  apply tied_not_None in H9 as H3.
-  apply tied_not_SomeMNone in H9 as H4.
+  apply tied_not_None in H8 as H3.
+  apply tied_not_SomeMNone in H8 as H4.
   inversion H_dyn.
-  + apply aggregation with (p0 := P) (p1 := P1) (peers := peers) (v := targ) (v_type := T1).
-    * assumption.
-    * assumption.
-    * assumption.
-    * assumption.
-    * assumption.
+  subst.
+  + eapply aggregation.
+    * eassumption.
+    * eassumption.
+    * eassumption.
+    * eassumption.
+    * eassumption.
     * eapply transmittable_value_typing in H2; eassumption.
     * eapply transmittable_value_typing; eassumption.
   + eapply T_AsLocal.
@@ -361,7 +362,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   inversion Hdyn.
   inversion Hstat.
   subst.
-  inversion H14.
+  inversion H13.
   subst.
   eapply T_AsLocal.
   + assumption.

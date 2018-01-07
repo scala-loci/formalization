@@ -3,15 +3,15 @@ Require Import ReTierStaticSemantics.
 Require Import ReTierDynamicSemantics.
 
 Lemma aggregation_multiple:
-  forall typing ties Psi Delta Gamma P p0 p1 peers v v_agg v_type,
-  ties (p0, p1) = Some multiple ->
+  forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type,
+  (peer_ties program) (P0, P1) = Some multiple ->
   value v ->
   transmittable_type v_type ->
-  typing; ties; Psi; Delta; Gamma; P |- v : v_type ->
-  Phi ties p0 p1 peers v v_type = Some v_agg ->
+  program :: Psi; Delta; Gamma; P |- v : v_type ->
+  Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg ->
     value v_agg /\
     transmittable_type (List v_type) /\
-    typing; ties; Psi; Delta; Gamma; P |- v_agg : List v_type.
+    program :: Psi; Delta; Gamma; P |- v_agg : List v_type.
 Proof.
 intros until v_type.
 intros H_multiple H_value H_transmittable H_type H_Phi.
@@ -24,7 +24,7 @@ induction peers as [| peer0 peers IH_peers ]; intros v_agg H_Phi.
   + apply v_nil.
   + apply U_List. assumption.
   + apply T_Nil.
-- assert (H : exists v_agg, Phi ties p0 p1 peers v v_type = Some v_agg).
+- assert (H : exists v_agg, Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg).
   + clear IH_peers H_Phi.
     induction peers as [| peer1 peers IH_peers ].
     * simpl.
@@ -55,15 +55,15 @@ induction peers as [| peer0 peers IH_peers ]; intros v_agg H_Phi.
 Qed.
 
 Lemma aggregation_optional:
-  forall typing ties Psi Delta Gamma P p0 p1 peers v v_agg v_type,
-  ties (p0, p1) = Some optional ->
+  forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type,
+  (peer_ties program) (P0, P1) = Some optional ->
   value v ->
   transmittable_type v_type ->
-  typing; ties; Psi; Delta; Gamma; P |- v : v_type ->
-  Phi ties p0 p1 peers v v_type = Some v_agg ->
+  program :: Psi; Delta; Gamma; P |- v : v_type ->
+  Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg ->
     value v_agg /\
     transmittable_type (Option v_type) /\
-    typing; ties; Psi; Delta; Gamma; P |- v_agg : Option v_type.
+    program :: Psi; Delta; Gamma; P |- v_agg : Option v_type.
 Proof.
 intros until v_type.
 intros H_multiple H_value H_transmittable H_type H_Phi.
@@ -88,15 +88,15 @@ destruct peers.
 Qed.
 
 Lemma aggregation_single:
-  forall typing ties Psi Delta Gamma P p0 p1 peers v v_agg v_type,
-  ties (p0, p1) = Some single ->
+  forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type,
+  (peer_ties program) (P0, P1) = Some single ->
   value v ->
   transmittable_type v_type ->
-  typing; ties; Psi; Delta; Gamma; P |- v : v_type ->
-  Phi ties p0 p1 peers v v_type = Some v_agg ->
+  program :: Psi; Delta; Gamma; P |- v : v_type ->
+  Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg ->
     value v_agg /\
     transmittable_type v_type /\
-    typing; ties; Psi; Delta; Gamma; P |- v_agg : v_type.
+    program :: Psi; Delta; Gamma; P |- v_agg : v_type.
 Proof.
 intros until v_type.
 intros H_multiple H_value H_transmittable H_type H_Phi.
@@ -116,21 +116,21 @@ destruct peers.
 Qed.
 
 Lemma aggregation:
-  forall typing ties Psi Delta Gamma P p0 p1 peers v v_agg v_type v_agg_type,
-  ties (p0, p1) <> None ->
-  ties (p0, p1) <> Some mNone ->
-  Phi ties p0 p1 peers v v_type = Some v_agg ->
-  phi ties p0 p1 v_type = Some v_agg_type ->
+  forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type v_agg_type,
+  (peer_ties program) (P0, P1) <> None ->
+  (peer_ties program) (P0, P1) <> Some mNone ->
+  Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg ->
+  phi (peer_ties program) P0 P1 v_type = Some v_agg_type ->
   value v ->
   transmittable_type v_type ->
-  typing; ties; Psi; Delta; Gamma; P |- v : v_type ->
+  program :: Psi; Delta; Gamma; P |- v : v_type ->
     value v_agg /\
     transmittable_type v_agg_type /\
-    typing; ties; Psi; Delta; Gamma; P |- v_agg : v_agg_type.
+    program :: Psi; Delta; Gamma; P |- v_agg : v_agg_type.
 Proof.
 intros until v_agg_type.
 intros H_tie0 H_tie1 H_Phi H_phi_type H_value H_transmittable H_type.
-case_eq (ties (p0, p1)).
+case_eq ((peer_ties program) (P0, P1)).
 - intros multiplicity H_tie.
   unfold phi in H_phi_type.
   rewrite H_tie in H_phi_type.

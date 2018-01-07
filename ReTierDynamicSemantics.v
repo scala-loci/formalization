@@ -2,41 +2,28 @@ Require Import ReTierSyntax.
 Require Import Maps.
 Require Coq.Lists.ListSet.
 
-
-Definition peerInsts := ListSet.set p.
-Definition noPeerInsts := ListSet.empty_set p.
-
-Definition eq_peerInstDec : forall x y : p, {x = y} + {x <> y}.
-  decide equality. decide equality.
-Defined.
-
-Definition pISet_add (x: p) (s: peerInsts): peerInsts :=
-  ListSet.set_add eq_peerInstDec x s.
-
-Definition pISet_mem (x: p) (s: peerInsts): bool :=
-  ListSet.set_mem eq_peerInstDec x s.
-
-
 (**
  ----------------------------------------------------------------------------
   Below we use the following notation taken from the informal specification.
 
   rho   : reactive system
+  theta : peer instances
+  P     : current peer
  ----------------------------------------------------------------------------
 **)
 
-Reserved Notation "peerTyping ; Ties ; peerInsts ; P |> t ; rho ==> t' ; rho'"
+Reserved Notation "program :: theta : P |> t ; rho ==> t' ; rho'"
   (at level 40,
-   Ties at next level, peerInsts at next level, P at next level,
-   t at next level, rho at next level, t' at next level).
+   theta at next level, P at next level, t at next level,
+   rho at next level, t' at next level).
 
 
 
 (** auxiliary functions for aggegation **)
 
-  Fixpoint Phi (ties: Ties) (p0 p1: P) (peers: Coq.Lists.ListSet.set p) (value: t) (type: T): option t :=
-    match (ties (p0, p1), peers) with
-    | (Some multiple, Datatypes.cons peer peers) => match Phi ties p0 p1 peers value type with
+  Fixpoint Phi (ties: ties) (P0 P1: P) (peers: ListSet.set p) (value: t) (type: T): option t :=
+    match (ties (P0, P1), peers) with
+    | (Some multiple, Datatypes.cons peer peers) => match Phi ties P0 P1 peers value type with
       | Some peers => Some (cons value peers)
       | None => None
       end
@@ -135,14 +122,6 @@ Inductive reactiveSystem : Type :=
 
 Definition emptyReactSys := ReactiveSystem (Reactive 0) (ListSet.empty_set r) (reactEmpty).
 
-Definition getPeerInstancesOfType (typing: peerTyping) (insts: peerInsts) (PT: P): ListSet.set p :=
-  let hasTypePT (pInst: p): bool :=
-    match (typing pInst) with
-    | None => false
-    | Some PT2 => beq_peerType PT PT2
-    end
-  in Coq.Lists.List.filter hasTypePT insts.
-
 Lemma react_eq_dec : forall x y:r, {x = y} + {x <> y}.
 Proof. repeat decide equality. Qed.
 
@@ -170,72 +149,71 @@ Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSyste
   end.
 
 
-Inductive localStep : peerTyping -> Ties -> peerInsts -> P -> t -> reactiveSystem -> t -> reactiveSystem -> Prop :=
+Inductive localStep : program -> ListSet.set p -> P -> t -> reactiveSystem -> t -> reactiveSystem -> Prop :=
 
   (* TODO: E_Context *)
 
-  | E_App: forall ties peerTyping peerInsts P x v t T rho,
+  | E_App: forall program theta P x v t T rho,
       value v ->
-        peerTyping; ties; peerInsts; P |> app (lambda x T t) v; rho
+       program :: theta : P |> app (lambda x T t) v; rho
         ==> [x :=_t v] t; rho
 
   (* remote access *)
 
-  | E_AsLocal: forall ties peerTyping peerInsts P0 P1 v v' T rho peers,
+  | E_AsLocal: forall program theta P0 P1 v v' T rho,
       value v ->
-      getPeerInstancesOfType peerTyping peerInsts P1 = peers ->
-      Phi ties P0 P1 peers v T = Some v' ->
-        peerTyping; ties; peerInsts; P0 |> asLocal v (*:*) (T on P1); rho
+      Phi (peer_ties program) P0 P1 (peer_instances_of_type program P1) v T = Some v' ->
+       program :: theta : P0 |> asLocal v (*:*) (T on P1); rho
         ==> v'; rho
 
-  | E_Comp: forall ties peerTyping peerInsts P0 P1 x v t T rho,
+  | E_Comp: forall program theta P0 P1 x v t T rho,
       value v ->
-        peerTyping; ties; peerInsts; P0 |> asLocalIn x (*=*) v (*in*) t (*:*) (T on P1); rho
+       program :: theta : P0 |> asLocalIn x (*=*) v (*in*) t (*:*) (T on P1); rho
         ==> asLocal ([x :=_t v] t) (*:*) (T on P1); rho
 
-  | E_Remote: forall ties peerTyping peerInsts P0 P1 t t' T rho rho',
-      peerTyping; ties; peerInsts; P1 |> t; rho ==> t'; rho' ->
-        peerTyping; ties; peerInsts; P0 |> asLocal t (*:*) (T on P1); rho
+  | E_Remote: forall program theta P0 P1 t t' T rho rho',
+     program :: theta : P1 |> t; rho ==> t'; rho' ->
+       program :: theta : P0 |> asLocal t (*:*) (T on P1); rho
         ==> asLocal t' (*:*) (T on P1); rho'
 
-  | E_AsLocalFrom: forall ties peerTyping peerInsts P0 P1 v p T rho,
+  | E_AsLocalFrom: forall program theta P0 P1 v p T rho,
       value v ->
-        peerTyping; ties; peerInsts; P0 |> asLocalFrom v (*:*) (T on P1) (*from*) p; rho
+       program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) p; rho
         ==> v; rho
 
-  | E_CompFrom: forall ties peerTyping peerInsts P0 P1 x v p t T rho,
+  | E_CompFrom: forall program theta P0 P1 x v p t T rho,
       value v ->
-        peerTyping; ties; peerInsts; P0 |> asLocalInFrom x (*=*) v (*in*) t (*:*) (T on P1) (*from*) p; rho
+       program :: theta : P0 |> asLocalInFrom x (*=*) v (*in*) t (*:*) (T on P1) (*from*) p; rho
         ==> asLocalFrom ([x :=_t v] t) (*:*) (T on P1) (*from*) p; rho
 
-  | E_RemoteFrom: forall ties peerTyping peerInsts P0 P1 t t' p T rho rho',
-      peerTyping; ties; peerInsts; P1 |> t; rho ==> t'; rho' ->
-        peerTyping; ties; peerInsts; P0 |> asLocalFrom t (*:*) (T on P1) (*from*) p; rho
+  | E_RemoteFrom: forall program theta P0 P1 t t' p T rho rho',
+     program :: theta : P1 |> t; rho ==> t'; rho' ->
+       program :: theta : P0 |> asLocalFrom t (*:*) (T on P1) (*from*) p; rho
         ==> asLocalFrom t' (*:*) (T on P1) (*from*) p; rho'
 
   (* reactive rules *)
 
-  | E_ReactiveVar: forall ties peerTyping peerInsts P v r rho rho',
+  | E_ReactiveVar: forall program theta P v r rho rho',
       (r, rho') = reactAlloc v rho ->
       value v ->
-        peerTyping; ties; peerInsts; P |> var v; rho
+       program :: theta : P |> var v; rho
         ==> reactApp r; rho'
 
-  | E_Signal: forall ties peerTyping peerInsts P t r rho rho',
+  | E_Signal: forall program theta P t r rho rho',
       (r, rho') = reactAlloc t rho ->
-        peerTyping; ties; peerInsts; P |> signal t; rho
+       program :: theta : P |> signal t; rho
         ==> reactApp r; rho'
 
-  | E_Set: forall ties peerTyping peerInsts P v r rho rho',
+  | E_Set: forall program theta P v r rho rho',
       rho' = updateVar r v rho ->
       value v ->
-        peerTyping; ties; peerInsts; P |> set (reactApp r) (*:=*) v; rho
+       program :: theta : P |> set (reactApp r) (*:=*) v; rho
         ==> unit; rho'
 
-  | E_Now: forall ties peerTyping peerInsts P t r rho rho',
+  | E_Now: forall program theta P t r rho rho',
       (Some t, rho') = currentValue r rho ->
-        peerTyping; ties; peerInsts; P |> now (reactApp r); rho
+       program :: theta : P |> now (reactApp r); rho
         ==> t; rho'
 
-where "peerTyping ; Ties ; peerInsts ; P |> t ; rho ==> t' ; rho'" := (localStep peerTyping Ties peerInsts P t rho t' rho').
+where "program :: theta : P |> t ; rho ==> t' ; rho'" := (localStep program theta P t rho t' rho').
 

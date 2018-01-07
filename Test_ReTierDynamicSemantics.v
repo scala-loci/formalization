@@ -351,21 +351,21 @@ Definition testPeerInsts1 := Instances [4, 3, 2, 1, 0].
 
 Example testLocalStep_EApp_1:
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
-  app (lambda (Id "x") (Option Unit) (unit)) (some unit); emptyReactSys ==>
-  unit; emptyReactSys.
+  app (lambda (Id "x") (Option Unit) (unit)) (some unit); emptyReactSys
+  == NoInstances ==> unit; emptyReactSys.
 Proof. apply E_App, v_some, v_unit. Qed.
 
 Example testLocalStep_EApp_2:
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   app (lambda (Id "x") (Option Unit) (idApp (Id "x"))) (some unit); emptyReactSys
-  ==> some unit; emptyReactSys.
+  == NoInstances ==> some unit; emptyReactSys.
 Proof. apply E_App, v_some, v_unit. Qed.
 
 
 Example testLocalStep_EAsLocal_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocal unit (*:*) (Unit on (Peer "ps")); emptyReactSys
-  ==> unit; emptyReactSys.
+  == testPeerInsts1 ==> unit; emptyReactSys.
 Proof.
   eapply E_AsLocal.
   - apply v_unit.
@@ -376,35 +376,35 @@ Qed.
 Example testLocalStep_EComp_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocalIn (Id "x") (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps")); emptyReactSys
-  ==> asLocal unit (*:*) (Unit on (Peer "ps")); emptyReactSys.
+  == Instances [ 2 ] ==> asLocal unit (*:*) (Unit on (Peer "ps")); emptyReactSys.
 Proof. apply E_Comp, v_unit. Qed.
 
 
 Example testLocalStep_ERemote_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocal (app (lambda (Id "x") (Option Unit) (unit)) (some unit)) (*:*) (Unit on (Peer "ps")); emptyReactSys
-  ==> asLocal unit (*:*) (Unit on (Peer "ps")); emptyReactSys.
+  == Instances [ 2 ] ==> asLocal unit (*:*) (Unit on (Peer "ps")); emptyReactSys.
 Proof. apply E_Remote, E_App, v_some, v_unit. Qed.
 
 
 Example testLocalStep_EAsLocalFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys
-  ==> unit; emptyReactSys.
+  == testPeerInsts1 ==> unit; emptyReactSys.
 Proof. apply E_AsLocalFrom, v_unit. Qed.
 
 
 Example testLocalStep_ECompFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys
-   ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys.
+  == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys.
 Proof. apply E_CompFrom, v_unit. Qed.
 
 
 Example testLocalStep_ERemoteFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocalFrom (app (lambda (Id "x") (Option Unit) (unit)) (some unit)) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys
-  ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys.
+  == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInst 2)); emptyReactSys.
 Proof. apply E_RemoteFrom, E_App, v_some, v_unit. Qed.
 
 
@@ -420,7 +420,7 @@ Example testLocalStep_EReactiveVar_1:
   (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   var (some unit); emptyReactSys
-  ==> reactApp testVar1; testReactSys_var1.
+  == NoInstances ==> reactApp testVar1; testReactSys_var1.
 Proof.
   split.
   - reflexivity.
@@ -436,7 +436,7 @@ Definition testReactSys_var1_signal1 := snd testReactSys_var1_signal1_p.
 Example testLocalStep_ESignal_1:
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   signal (reactApp testVar1); testReactSys_var1
-  ==> reactApp testSignal1; testReactSys_var1_signal1.
+  == NoInstances ==> reactApp testSignal1; testReactSys_var1_signal1.
 Proof.
   eapply E_Signal. reflexivity.
 Qed.
@@ -450,7 +450,7 @@ Example testLocalStep_ESet_1:
   (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   set (reactApp testVar1) (*:=*) (none Unit); testReactSys_var1
-  ==> unit; testReactSys_var1None.
+  == NoInstances ==> unit; testReactSys_var1None.
 Proof.
   split.
   - reflexivity.
@@ -469,7 +469,7 @@ Example testLocalStep_ENow_1:
   (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   now (reactApp testVar1); testReactSys_var1_signal1
-  ==> some unit; testReactSys_var1_signal1.
+  == NoInstances ==> some unit; testReactSys_var1_signal1.
 Proof.
   split.
   - reflexivity.
@@ -483,7 +483,7 @@ Example testLocalStep_ENow_2:
   (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   now (reactApp testVar1); testReactSys_var1_signal1
-  ==> some unit; testReactSys_var1_signal1.
+  == NoInstances ==> some unit; testReactSys_var1_signal1.
 Proof.
   split.
   - reflexivity.

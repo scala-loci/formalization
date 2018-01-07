@@ -362,6 +362,8 @@ Definition peer_instances_add
   (instance: p) (instances: ListSet.set p): ListSet.set p :=
   ListSet.set_add eq_peer_instances_dec instance instances.
 
+Definition single_peer_instance p := peer_instances_add p NoInstances.
+
 Notation "'Instances' [ ]" := NoInstances (at level 50).
 
 Notation "'Instances' [ i , .. , j ]" :=

@@ -12,10 +12,10 @@ Require Coq.Lists.ListSet.
  ----------------------------------------------------------------------------
 **)
 
-Reserved Notation "program :: theta : P |> t ; rho ==> t' ; rho'"
+Reserved Notation "program :: theta : P |> t ; rho == theta' ==> t' ; rho'"
   (at level 40,
    theta at next level, P at next level, t at next level,
-   rho at next level, t' at next level).
+   rho at next level, theta' at next level, t' at next level).
 
 
 
@@ -149,71 +149,71 @@ Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSyste
   end.
 
 
-Inductive localStep : program -> ListSet.set p -> P -> t -> reactiveSystem -> t -> reactiveSystem -> Prop :=
+Inductive localStep : program -> peer_instances -> P -> t -> reactiveSystem -> peer_instances -> t -> reactiveSystem -> Prop :=
 
   (* TODO: E_Context *)
 
   | E_App: forall program theta P x v t T rho,
       value v ->
-       program :: theta : P |> app (lambda x T t) v; rho
-        ==> [x :=_t v] t; rho
+        program :: theta : P |> app (lambda x T t) v; rho
+        == theta ==> [x :=_t v] t; rho
 
   (* remote access *)
 
   | E_AsLocal: forall program theta P0 P1 v v' T rho,
       value v ->
       Phi (peer_ties program) P0 P1 (peer_instances_of_type program P1) v T = Some v' ->
-       program :: theta : P0 |> asLocal v (*:*) (T on P1); rho
-        ==> v'; rho
+        program :: theta : P0 |> asLocal v (*:*) (T on P1); rho
+        == theta ==> v'; rho
 
   | E_Comp: forall program theta P0 P1 x v t T rho,
       value v ->
-       program :: theta : P0 |> asLocalIn x (*=*) v (*in*) t (*:*) (T on P1); rho
-        ==> asLocal ([x :=_t v] t) (*:*) (T on P1); rho
+        program :: theta : P0 |> asLocalIn x (*=*) v (*in*) t (*:*) (T on P1); rho
+        == peer_instances_of_type program P1 ==> asLocal ([x :=_t v] t) (*:*) (T on P1); rho
 
-  | E_Remote: forall program theta P0 P1 t t' T rho rho',
-     program :: theta : P1 |> t; rho ==> t'; rho' ->
-       program :: theta : P0 |> asLocal t (*:*) (T on P1); rho
-        ==> asLocal t' (*:*) (T on P1); rho'
+  | E_Remote: forall program theta theta' P0 P1 t t' T rho rho',
+      program :: peer_instances_of_type program P1 : P1 |> t; rho == theta' ==> t'; rho' ->
+        program :: theta : P0 |> asLocal t (*:*) (T on P1); rho
+        == theta' ==> asLocal t' (*:*) (T on P1); rho'
 
   | E_AsLocalFrom: forall program theta P0 P1 v p T rho,
       value v ->
-       program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) p; rho
-        ==> v; rho
+        program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) (peerApp p); rho
+        == theta ==> v; rho
 
   | E_CompFrom: forall program theta P0 P1 x v p t T rho,
       value v ->
-       program :: theta : P0 |> asLocalInFrom x (*=*) v (*in*) t (*:*) (T on P1) (*from*) p; rho
-        ==> asLocalFrom ([x :=_t v] t) (*:*) (T on P1) (*from*) p; rho
+        program :: theta : P0 |> asLocalInFrom x (*=*) v (*in*) t (*:*) (T on P1) (*from*) (peerApp p); rho
+        == single_peer_instance p ==> asLocalFrom ([x :=_t v] t) (*:*) (T on P1) (*from*) (peerApp p); rho
 
-  | E_RemoteFrom: forall program theta P0 P1 t t' p T rho rho',
-     program :: theta : P1 |> t; rho ==> t'; rho' ->
-       program :: theta : P0 |> asLocalFrom t (*:*) (T on P1) (*from*) p; rho
-        ==> asLocalFrom t' (*:*) (T on P1) (*from*) p; rho'
+  | E_RemoteFrom: forall program theta theta' P0 P1 t t' p T rho rho',
+      program :: single_peer_instance p : P1 |> t; rho == theta' ==> t'; rho' ->
+        program :: theta : P0 |> asLocalFrom t (*:*) (T on P1) (*from*) (peerApp p); rho
+        == theta' ==> asLocalFrom t' (*:*) (T on P1) (*from*) (peerApp p); rho'
 
   (* reactive rules *)
 
   | E_ReactiveVar: forall program theta P v r rho rho',
       (r, rho') = reactAlloc v rho ->
       value v ->
-       program :: theta : P |> var v; rho
-        ==> reactApp r; rho'
+        program :: theta : P |> var v; rho
+        == theta ==> reactApp r; rho'
 
   | E_Signal: forall program theta P t r rho rho',
       (r, rho') = reactAlloc t rho ->
-       program :: theta : P |> signal t; rho
-        ==> reactApp r; rho'
+        program :: theta : P |> signal t; rho
+        == theta ==> reactApp r; rho'
 
   | E_Set: forall program theta P v r rho rho',
       rho' = updateVar r v rho ->
       value v ->
-       program :: theta : P |> set (reactApp r) (*:=*) v; rho
-        ==> unit; rho'
+        program :: theta : P |> set (reactApp r) (*:=*) v; rho
+        == theta ==> unit; rho'
 
   | E_Now: forall program theta P t r rho rho',
       (Some t, rho') = currentValue r rho ->
-       program :: theta : P |> now (reactApp r); rho
-        ==> t; rho'
+        program :: theta : P |> now (reactApp r); rho
+        == theta ==> t; rho'
 
-where "program :: theta : P |> t ; rho ==> t' ; rho'" := (localStep program theta P t rho t' rho').
+where "program :: theta : P |> t ; rho == theta' ==> t' ; rho'" := (localStep program theta P t rho theta' t' rho').
 

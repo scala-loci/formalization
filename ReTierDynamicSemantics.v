@@ -17,6 +17,9 @@ Reserved Notation "program :: theta : P |> t ; rho == theta' ==> t' ; rho'"
    theta at next level, P at next level, t at next level,
    rho at next level, theta' at next level, t' at next level).
 
+Reserved Notation "program :: s ; rho == theta ==> s' ; rho'"
+  (at level 40,
+  s at next level, rho at next level, theta at next level, s' at next level).
 
 
 (** auxiliary functions for aggegation **)
@@ -149,7 +152,7 @@ Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSyste
   end.
 
 
-Inductive localStep : program -> peer_instances -> P -> t -> reactiveSystem -> peer_instances -> t -> reactiveSystem -> Prop :=
+Inductive evaluation_t : program -> peer_instances -> P -> t -> reactiveSystem -> peer_instances -> t -> reactiveSystem -> Prop :=
 
   (* TODO: E_Context *)
 
@@ -215,5 +218,20 @@ Inductive localStep : program -> peer_instances -> P -> t -> reactiveSystem -> p
         program :: theta : P |> now (reactApp r); rho
         == theta ==> t; rho'
 
-where "program :: theta : P |> t ; rho == theta' ==> t' ; rho'" := (localStep program theta P t rho theta' t' rho').
+where "program :: theta : P |> t ; rho == theta' ==> t' ; rho'" := (evaluation_t program theta P t rho theta' t' rho').
+
+
+Inductive evaluation_s : program -> s -> reactiveSystem -> peer_instances -> s -> reactiveSystem -> Prop :=
+
+  | E_Placed: forall program theta P x t t' s T rho rho',
+      program :: peer_instances_of_type program P : P |> t; rho == theta ==> t'; rho' ->
+        program :: placed x (T on P) t s; rho
+        == theta ==> placed x (T on P) t' s; rho
+
+  | E_Placed_Val: forall program P x v s T rho,
+      value v ->
+        program :: placed x (T on P) v s; rho
+        == peer_instances_all program ==> [x :=_s v] s; rho
+
+where "program :: s ; rho == theta ==> s' ; rho'" := (evaluation_s program s rho theta s' rho').
 

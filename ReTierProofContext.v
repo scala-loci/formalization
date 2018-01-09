@@ -33,7 +33,7 @@ Lemma gamma_typing : forall (Gamma: varEnv) (x: id),
   Gamma x = None \/ (exists T, Gamma x = Some T).
 Proof.
 intros.
-destruct (Gamma x) as [ T' |].
+destruct Gamma as [ T' |].
 - right. exists T'. reflexivity.
 - left. reflexivity.
 Qed.
@@ -43,7 +43,7 @@ Lemma delta_typing : forall (Delta: placeEnv) (x: id),
   Delta x = None \/ (exists T P, Delta x = Some (T on P)).
 Proof.
 intros.
-destruct (Delta x).
+destruct Delta.
 - right.
   destruct s as [ T' P' ].
   exists T', P'.
@@ -59,13 +59,13 @@ Lemma appears_free_locally_or_remotely : forall t x,
 Proof.
 intros t x H.
 induction t; simpl; simpl in H.
-- destruct (beq_id x i); try assumption.
+- destruct id_dec; try assumption.
   apply IHt in H.
   assumption.
 - destruct H.
   + apply IHt1 in H. left. assumption.
   + apply IHt2 in H. right. assumption.
-- destruct (beq_id x i); try reflexivity || contradiction.
+- contradiction.
 - contradiction.
 - contradiction.
 - apply IHt in H. assumption.
@@ -77,12 +77,12 @@ induction t; simpl; simpl in H.
 - destruct H.
   + left. assumption.
   + apply IHt2 in H. right. assumption.
-- destruct (beq_id x i); destruct H.
+- destruct id_dec; destruct H.
   + apply IHt1 in H. left. assumption.
   + right. assumption.
   + apply IHt1 in H. left. assumption.
   + right. assumption.
-- destruct (beq_id x i); destruct H.
+- destruct id_dec; destruct H.
   + apply IHt1 in H. left. assumption.
   + destruct H.
     * right. left. assumption.
@@ -116,7 +116,7 @@ generalize dependent Gamma.
 generalize dependent T.
 generalize dependent P.
 induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in H_free_x.
-- case_eq (beq_id x i); intros H_eq; rewrite H_eq in H_free_x.
+- destruct id_dec.
   + eapply IHt in H_free_x; try eassumption.
     destruct H_free_x as [ T' H_lookup ], H_lookup as [ P' H_lookup ].
     exists T', P'.
@@ -130,11 +130,11 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
       left.
       rewrite <- H_lookup.
       unfold idUpdate, Maps.p_update, Maps.t_update.
-      rewrite H_eq.
+      destruct id_dec; try contradiction.
       reflexivity.
     * exists T', P'.
       right. assumption.
-- destruct (beq_id x i).
+- destruct id_dec.
   + eapply IHt in H_free_x; eassumption.
   + eapply IHt in H_free_x; eassumption.
 - destruct H_free_x.
@@ -143,17 +143,15 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
 - destruct H_free_x.
   + eapply IHt1; eassumption.
   + eapply IHt2; eassumption.
-- case_eq (beq_id x i); intros H_eq.
-  + rewrite beq_id_eq in H_eq.
+- destruct id_dec.
+  + exists T, P.
     subst.
-    exists T, P.
     destruct H5.
     * left. assumption.
     * destruct H.
       right; assumption.
-  + rewrite H_eq in H_free_x.
-    contradiction.
-- destruct (beq_id x i); contradiction.
+  + contradiction.
+- contradiction.
 - contradiction.
 - contradiction.
 - contradiction.
@@ -208,7 +206,7 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
     * exists T', P'.
       assumption.
   + eapply IHt2; eassumption.
-- case_eq (beq_id x i); intros H_eq; rewrite H_eq in H_free_x.
+- destruct id_dec.
   + destruct H_free_x as [ H_free_x | H_free_x ].
     * eapply IHt1; eassumption.
     * eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
@@ -225,12 +223,12 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
         - unfold
             idUpdate, Maps.p_update, Maps.t_update,
             emptyVarEnv, idEmpty, Maps.p_empty in H_lookup.
-          rewrite H_eq in H_lookup.
+          destruct id_dec; try contradiction.
           congruence.
         - exists T', P'.
           right. assumption.
       }
-- case_eq (beq_id x i); intros H_eq; rewrite H_eq in H_free_x.
+- destruct id_dec.
   + destruct H_free_x.
     * eapply IHt1; eassumption.
     * eapply IHt2; eassumption.
@@ -244,12 +242,12 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
         - unfold
             idUpdate, Maps.p_update, Maps.t_update,
             emptyVarEnv, idEmpty, Maps.p_empty in H_lookup.
-          rewrite H_eq in H_lookup.
+          destruct id_dec; try contradiction.
           congruence.
         - exists T', P'.
           assumption.
       }
-- case_eq (beq_id x i); intros H_eq; rewrite H_eq in H_free_x.
+- destruct id_dec.
   * { destruct H_free_x as [ H_free_x | H_free_x ].
       - eapply IHt1; eassumption.
       - destruct H_free_x as [ H_free_x | H_free_x ].
@@ -270,13 +268,13 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
           * unfold
               idUpdate, Maps.p_update, Maps.t_update,
               emptyVarEnv, idEmpty, Maps.p_empty in H_lookup.
-            rewrite H_eq in H_lookup.
+            destruct id_dec; try contradiction.
             congruence.
           * exists T', P'.
             right. assumption.
         + eapply IHt3; eassumption.
     }
-- case_eq (beq_id x i); intros H_eq; rewrite H_eq in H_free_x.
+- destruct id_dec.
   + destruct H_free_x as [ H_free_x | H_free_x ].
     * eapply IHt1; eassumption.
     * { destruct H_free_x as [ H_free_x | H_free_x ].
@@ -294,7 +292,7 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
           + unfold
               idUpdate, Maps.p_update, Maps.t_update,
               emptyVarEnv, idEmpty, Maps.p_empty in H_lookup.
-            rewrite H_eq in H_lookup.
+            destruct id_dec; try contradiction.
             congruence.
           + exists T', P'.
             assumption.
@@ -330,7 +328,7 @@ intros until x.
 intros H_free_x H_typing.
 generalize dependent Delta.
 induction s; intros; inversion H_typing; subst; simpl in H_free_x.
-- case_eq (beq_id x i); intros H_eq; rewrite H_eq in H_free_x.
+- destruct id_dec.
   + eapply free_in_context_t in H7 as H_lookup; try eassumption.
     destruct H_lookup as [ H_lookup_Gamma H_lookup_Delta ].
     destruct H_lookup_Gamma as [ T' H_lookup ]. try eassumption.
@@ -358,7 +356,7 @@ induction s; intros; inversion H_typing; subst; simpl in H_free_x.
           exists S'.
           instantiate (1 := (idUpdate i (T on P) Delta)) in H_lookup.
           unfold idUpdate, Maps.p_update, Maps.t_update in H_lookup.
-          rewrite H_eq in H_lookup.
+          destruct id_dec; try contradiction.
           assumption.
         - assumption.
       }
@@ -386,14 +384,14 @@ induction t; intros; inversion H_typing; subst.
   + intros y H_free_y.
     apply H_free_x_Delta.
     simpl.
-    destruct (beq_id y i); assumption.
+    destruct id_dec; assumption.
   + intros y H_free_y.
     unfold idUpdate, Maps.p_update, Maps.t_update.
-    case_eq (beq_id y i); intros H_eq.
+    destruct id_dec.
     * split; congruence.
     * apply H_free_x_Gamma.
       simpl.
-      rewrite H_eq.
+      destruct id_dec; try contradiction.
       assumption.
 - eapply IHt1 in H6.
   + eapply IHt2 in H8.
@@ -405,7 +403,7 @@ induction t; intros; inversion H_typing; subst.
 - apply T_Var.
   specialize H_free_x_Gamma with i.
   simpl in H_free_x_Gamma.
-  rewrite beq_id_refl in H_free_x_Gamma.
+  destruct id_dec; try contradiction.
   destruct H_free_x_Gamma as [ H_Gamma H_Gamma_Delta ]; try reflexivity.
   rewrite <- H_Gamma.
   destruct H5 as [ H_lookup_Gamma | H_lookup_Delta ].
@@ -460,7 +458,7 @@ induction t; intros; inversion H_typing; subst.
     * { intros y H_free_y.
         apply H_free_x_Delta.
         simpl.
-        destruct (beq_id y i).
+        destruct id_dec.
         - right. assumption.
         - apply appears_free_locally_or_remotely in H_free_y.
           right. assumption.
@@ -471,18 +469,18 @@ induction t; intros; inversion H_typing; subst.
         apply H_free_x_Delta.
         simpl.
         unfold idUpdate, Maps.p_update, Maps.t_update in H_empty.
-        destruct (beq_id y i).
+        destruct id_dec.
         - congruence.
         - right. assumption.
       }
   + intros y H_free_y.
     apply H_free_x_Delta.
     simpl.
-    destruct (beq_id y i); left; assumption.
+    destruct id_dec; left; assumption.
   + intros y H_free_y.
     apply H_free_x_Gamma.
     simpl.
-    destruct (beq_id y i); left; assumption.
+    destruct id_dec; left; assumption.
 - eapply IHt1 in H12.
   + eapply IHt2 in H13.
     * { eapply IHt3 in H15.
@@ -490,16 +488,16 @@ induction t; intros; inversion H_typing; subst.
         - intros y H_free_y.
           apply H_free_x_Delta.
           simpl.
-          destruct (beq_id y i); right; right; assumption.
+          destruct id_dec; right; right; assumption.
         - intros y H_free_y.
           apply H_free_x_Gamma.
           simpl.
-          destruct (beq_id y i); right; right; assumption.
+          destruct id_dec; right; right; assumption.
       }
     * { intros y H_free_y.
         apply H_free_x_Delta.
         simpl.
-        destruct (beq_id y i).
+        destruct id_dec.
         - right. left. assumption.
         - apply appears_free_locally_or_remotely in H_free_y.
           right. left. assumption.
@@ -510,18 +508,18 @@ induction t; intros; inversion H_typing; subst.
         apply H_free_x_Delta.
         simpl.
         unfold idUpdate, Maps.p_update, Maps.t_update in H_empty.
-        destruct (beq_id y i).
+        destruct id_dec.
         - congruence.
         - right. left. assumption.
       }
   + intros y H_free_y.
     apply H_free_x_Delta.
     simpl.
-    destruct (beq_id y i); left; assumption.
+    destruct id_dec; left; assumption.
   + intros y H_free_y.
     apply H_free_x_Gamma.
     simpl.
-    destruct (beq_id y i); left; assumption.
+    destruct id_dec; left; assumption.
 - eapply IHt in H5.
   + eapply T_Signal; eassumption.
   + intros. apply H_free_x_Delta. assumption.
@@ -564,19 +562,19 @@ induction s; intros; inversion H_typing; subst.
       intros.
       apply H_free_x.
       simpl.
-      case (beq_id x i); try assumption.
+      destruct id_dec; try assumption.
       left. assumption.
     * apply H_free_x.
       simpl.
       apply appears_free_locally_or_remotely in H.
-      case (beq_id x i); try assumption.
+      destruct id_dec; try assumption.
       left. assumption.
   + intros.
     unfold idUpdate, Maps.p_update, Maps.t_update.
-    case_eq (beq_id x i); intros H_eq; try reflexivity.
+    destruct id_dec; try reflexivity.
     apply H_free_x.
     simpl.
-    rewrite H_eq.
+    destruct id_dec; try contradiction.
     right. assumption.
 - apply T_End.
 Qed.

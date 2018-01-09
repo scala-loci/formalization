@@ -47,11 +47,11 @@ Reserved Notation "program :: s ; rho == theta ==> s' ; rho'"
 Fixpoint subst_t x value term: t :=
   match term with
   | lambda x' type term =>
-    if beq_id x x'
+    if id_dec x x'
       then lambda x' type term
       else lambda x' type (subst_t x value term)
   | app term0 term1 => app (subst_t x value term0) (subst_t x value term1)
-  | idApp x' => if beq_id x x' then value else term
+  | idApp x' => if id_dec x x' then value else term
   | unit => unit
   | none type => none type
   | some term => some (subst_t x value term)
@@ -75,12 +75,12 @@ Notation "[ id :=_t value ] term" := (subst_t id value term) (at level 30).
 Fixpoint subst_s_locality x value term locality: t :=
   match term with
   | lambda x' type term =>
-    if beq_id x x'
+    if id_dec x x'
       then lambda x' type (subst_s_locality x value term RemoteVar)
       else lambda x' type (subst_s_locality x value term locality)
   | app term0 term1 => app (subst_s_locality x value term0 locality) (subst_s_locality x value term1 locality)
   | idApp x' => match locality with
-    | LocalOrRemoteVar => if beq_id x x' then value else term
+    | LocalOrRemoteVar => if id_dec x x' then value else term
     | RemoteVar => term
     end
   | unit => unit
@@ -91,11 +91,11 @@ Fixpoint subst_s_locality x value term locality: t :=
   | asLocal term type => asLocal (subst_s_locality x value term LocalOrRemoteVar) type
   | asLocalFrom term0 type term1 => asLocalFrom (subst_s_locality x value term0 LocalOrRemoteVar) type (subst_s_locality x value term1 locality)
   | asLocalIn x' term0 term1 type =>
-    if beq_id x x'
+    if id_dec x x'
       then asLocalIn x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type
       else asLocalIn x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type
   | asLocalInFrom x' term0 term1 type term2 =>
-    if beq_id x x'
+    if id_dec x x'
       then asLocalInFrom x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type (subst_s_locality x value term2 locality)
       else asLocalInFrom x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type (subst_s_locality x value term2 locality)
   | signal term => signal (subst_s_locality x value term locality)
@@ -110,7 +110,7 @@ Fixpoint subst_s_locality x value term locality: t :=
 Fixpoint subst_s x value term: s :=
   match term with
   | placed x' type term0 term1 =>
-    if beq_id x x'
+    if id_dec x x'
       then placed x' type (subst_s_locality x value term0 LocalOrRemoteVar) term1
       else placed x' type (subst_s_locality x value term0 LocalOrRemoteVar) (subst_s x value term1)
   | pUnit => pUnit

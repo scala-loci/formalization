@@ -2,101 +2,54 @@ Require Import Coq.Strings.String.
 Require Import Maps.
 Require Coq.Lists.ListSet.
 
-Inductive id : Type :=
-  | Id : string -> id.
 
-Definition beq_id (x y: id): bool :=
-  match x, y with
-  | Id n, Id m => if string_dec n m then true else false
-  end.
+(** identifier **)
 
+Inductive id : Type := Id : string -> id.
 
-Example test_beq_id_1: beq_id (Id "x") (Id "x") = true.
-Proof. reflexivity. Qed.
-
-Example test_beq_id_2: beq_id (Id "x") (Id "y") = false.
-Proof. reflexivity. Qed.
-
-Lemma beq_id_eq : forall (x y: id), beq_id x y = true <-> x = y.
-Proof.
-intros.
-destruct x as [ x ], y as [ y ].
-simpl.
-case (String.string_dec x y); intros; split; congruence.
-Qed.
-
-Lemma beq_id_not_eq : forall (x y: id), beq_id x y = false <-> x <> y.
-Proof.
-intros.
-destruct x as [ x ], y as [ y ].
-simpl.
-case (String.string_dec x y); intros; split; congruence.
-Qed.
-
-Lemma beq_id_comm : forall (x y: id), beq_id x y = beq_id y x.
-Proof.
-intros.
-destruct x as [ x ], y as [ y ].
-simpl.
-case_eq (String.string_dec x y);
-  case_eq (String.string_dec y x);
-  intros;
-  subst;
-  reflexivity || contradiction.
-Qed.
-
-Lemma beq_id_refl : forall x, beq_id x x = true.
-Proof.
-intros.
-destruct x as [ x ].
-simpl.
-case (String.string_dec x x); intros; congruence || contradiction.
-Qed.
+Definition id_dec: forall x y : id, {x = y} + {x <> y}.
+  repeat decide equality.
+Defined.
 
 
-(** peer instances **)
-Inductive p : Type :=
-  | PeerInst: nat -> p.
+(** peer instance **)
 
-Definition beq_peerInst (p1 p2: p): bool :=
-  match (p1, p2) with
-  | (PeerInst x, PeerInst y) => if Nat.eqb x y then true else false
-  end.
+Inductive p : Type := PeerInstance: nat -> p.
 
-(** peer types **)
-Inductive P : Type :=
-  | Peer: string -> P.
-
-Definition beq_peerType (p1 p2: P): bool :=
-  match (p1, p2) with
-  | (Peer x, Peer y) => if string_dec x y then true else false
-  end.
-
-Example test_beq_peer_1: beq_peerType (Peer "x") (Peer "x") = true.
-Proof. reflexivity. Qed.
-
-Example test_beq_peer_2: beq_peerType (Peer "y") (Peer "x") = false.
-Proof. reflexivity. Qed.
+Definition peer_instance_dec: forall x y : p, {x = y} + {x <> y}.
+  repeat decide equality.
+Defined.
 
 
-(** reactive instances **)
-Inductive r: Type :=
-  | Reactive: nat -> r.
+(** peer type **)
 
-Definition beq_react (r1 r2: r): bool :=
-  match (r1, r2) with
-  | (Reactive x, Reactive y) => if Nat.eqb x y then true else false
-  end.
+Inductive P : Type := Peer: string -> P.
+
+Definition peer_dec: forall x y : P, {x = y} + {x <> y}.
+  repeat decide equality.
+Defined.
+
+
+(** reactive instance **)
+
+Inductive r: Type := Reactive: nat -> r.
+
+Definition reactive_dec: forall x y : r, {x = y} + {x <> y}.
+  repeat decide equality.
+Defined.
+
+
+(** environments **)
 
 Definition idMap (V: Type) := partial_map id V.
 Definition idEmpty {V: Type} := p_empty id V.
 Definition idUpdate {V: Type} (k: id) (v: V) (m: idMap V): idMap V :=
-  p_update beq_id m k v.
+  p_update (fun x y => if id_dec x y then true else false) m k v.
 
 Definition reactMap (V: Type) := partial_map r V.
 Definition reactEmpty {V: Type} := p_empty r V.
 Definition reactUpdate {V: Type} (k: r) (v: V) (m: reactMap V): reactMap V :=
-  p_update beq_react m k v.
+  p_update (fun x y => if reactive_dec x y then true else false) m k v.
 
 Example test_idEmpty_1: (@idEmpty nat) (Id "x") = None.
 Proof. reflexivity. Qed.
@@ -112,13 +65,9 @@ Proof. reflexivity. Qed.
 Example test_update_5: (idUpdate (Id "y") 2 (idUpdate (Id "x") 1 idEmpty) (Id "y")) = Some 2.
 Proof. reflexivity. Qed.
 
-Definition beq_r (a b: r): bool :=
-  match (a, b) with
-  | (Reactive an, Reactive bn) => Nat.eqb an bn
-  end.
-
 
 (** types **)
+
 Inductive T : Type :=
   | Arrow  : T -> T -> T
   | Unit   : T
@@ -127,8 +76,7 @@ Inductive T : Type :=
   | Remote : P -> T
   | Signal : T -> T
   | Var    : T -> T
-  
-  | Tnat   : T.   (* Added to make testing easier. *)
+  | Tnat   : T.
 
 Notation "T1 ~> T2" := (Arrow T1 T2) (at level 30, right associativity).
 
@@ -138,7 +86,7 @@ Fixpoint beq_T (a b: T): bool :=
   | (Unit, Unit) => true
   | (Option a1, Option b1) => beq_T a1 b1
   | (List a1, List b1) => beq_T a1 b1
-  | (Remote Pa, Remote Pb) => beq_peerType Pa Pb
+  | (Remote Pa, Remote Pb) => if peer_dec Pa Pb then true else false
   | (Signal a1, Signal b1) => beq_T a1 b1
   | (Var a1, Var b1) => beq_T a1 b1
   | _ => false
@@ -146,6 +94,7 @@ Fixpoint beq_T (a b: T): bool :=
 
 
 (** placement types **)
+
 Inductive S : Type :=
   | on : T -> P -> S.
 
@@ -153,10 +102,11 @@ Infix "on" := on (at level 20).
 
 Definition beq_S (a b: S): bool :=
   match (a, b) with
-  | (aT on aP, bT on bP) => (beq_T aT bT) && (beq_peerType aP bP)
+  | (aT on aP, bT on bP) => (beq_T aT bT) && (if peer_dec aP bP then true else false)
   end.
 
 (** terms **)
+
 Inductive t : Type := 
   | lambda : id -> T -> t -> t
   | app    : t -> t -> t
@@ -180,7 +130,44 @@ Inductive t : Type :=
   (* Added to make testing easier. *)
   | tnat   : nat -> t.
 
+(*
+Notation "\ x ; T , t" := (lambda (Id x) T t) (at level 80, left associativity).
+Example testNotationLambda1: (\ "z" ; Unit , unit) = (lambda (Id "z") Unit unit).
+Proof. reflexivity. Qed.
+*)
+
+Fixpoint beq_t (a b: t): bool :=
+  match (a, b) with
+  | (lambda ax aT at_, lambda bx bT bt)
+      => (if id_dec ax bx then true else false) && (beq_T aT bT) && (beq_t at_ bt)
+  | (app at1 at2, app bt1 bt2)    => (beq_t at1 bt1) && (beq_t at2 bt2)
+  | (idApp xa, idApp xb)          => if id_dec xa xb then true else false
+  | (unit, unit)                  => true
+  | (none aT, none bT)            => beq_T aT bT
+  | (some at1, some bt1)          => beq_t at1 bt1
+  | (nil aT, nil bT)              => beq_T aT bT
+  | (cons at1 at2, cons bt1 bt2)  => (beq_t at1 bt1) && (beq_t at2 bt2)
+  | (asLocal at1 aS, asLocal bt1 bS) 
+      => (beq_t at1 bt1) && (beq_S aS bS)
+  | (asLocalFrom at1 aS at2, asLocalFrom bt1 bS bt2)
+      => (beq_t at1 bt1) && (beq_S aS bS) && (beq_t at2 bt2)
+  | (asLocalIn ax at1 at2 aS, asLocalIn bx bt1 bt2 bS)
+      => (if id_dec ax bx then true else false) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS)
+  | (asLocalInFrom ax at1 at2 aS at3, asLocalInFrom bx bt1 bt2 bS bt3)
+      => (if id_dec ax bx then true else false) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS) && (beq_t at3 bt3)
+  | (signal at1, signal bt1)      => beq_t at1 bt1
+  | (var at1, var bt1)            => beq_t at1 bt1
+  | (now at1, now bt1)            => beq_t at1 bt1
+  | (set at1 at2, set bt1 bt2)    => (beq_t at1 bt1) && (beq_t at2 bt2)
+  | (peerApp ap, peerApp bp)      => if peer_instance_dec ap bp then true else false
+  | (reactApp ar, reactApp br)    => if reactive_dec ar br then true else false
+  | (tnat an, tnat bn)            => Nat.eqb an bn
+  | _                             => false
+  end.
+
+
 (** values **)
+
 Inductive value : t -> Prop :=
   | v_lambda : forall x T t, value (lambda x T t)
   | v_unit : value unit
@@ -202,47 +189,14 @@ Inductive transmittable_type : T -> Prop :=
   | U_Tnat : transmittable_type Tnat.
 
 
-Fixpoint beq_t (a b: t): bool :=
-  match (a, b) with
-  | (lambda ax aT at_, lambda bx bT bt)
-      => (beq_id ax bx) && (beq_T aT bT) && (beq_t at_ bt)
-  | (app at1 at2, app bt1 bt2)    => (beq_t at1 bt1) && (beq_t at2 bt2)
-  | (idApp xa, idApp xb)          => beq_id xa xb
-  | (unit, unit)                  => true
-  | (none aT, none bT)            => beq_T aT bT
-  | (some at1, some bt1)          => beq_t at1 bt1
-  | (nil aT, nil bT)              => beq_T aT bT
-  | (cons at1 at2, cons bt1 bt2)  => (beq_t at1 bt1) && (beq_t at2 bt2)
-  | (asLocal at1 aS, asLocal bt1 bS) 
-      => (beq_t at1 bt1) && (beq_S aS bS)
-  | (asLocalFrom at1 aS at2, asLocalFrom bt1 bS bt2)
-      => (beq_t at1 bt1) && (beq_S aS bS) && (beq_t at2 bt2)
-  | (asLocalIn ax at1 at2 aS, asLocalIn bx bt1 bt2 bS)
-      => (beq_id ax bx) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS)
-  | (asLocalInFrom ax at1 at2 aS at3, asLocalInFrom bx bt1 bt2 bS bt3)
-      => (beq_id ax bx) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS) && (beq_t at3 bt3)
-  | (signal at1, signal bt1)      => beq_t at1 bt1
-  | (var at1, var bt1)            => beq_t at1 bt1
-  | (now at1, now bt1)            => beq_t at1 bt1
-  | (set at1 at2, set bt1 bt2)    => (beq_t at1 bt1) && (beq_t at2 bt2)
-  | (peerApp ap, peerApp bp)      => beq_peerInst ap bp
-  | (reactApp ar, reactApp br)  => beq_r ar br
-  | (tnat an, tnat bn)            => Nat.eqb an bn
-  | _                             => false
-  end.
-
-(*
-Notation "\ x ; T , t" := (lambda (Id x) T t) (at level 80, left associativity).
-Example testNotationLambda1: (\ "z" ; Unit , unit) = (lambda (Id "z") Unit unit).
-Proof. reflexivity. Qed.
-*)
-
-
 (** placed terms **)
+
 Inductive s : Type :=
   | placed : id -> S -> t -> s -> s
   | pUnit  : s.
 
+
+(** ties **)
 
 Inductive multiplicity : Type :=
   | multiple : multiplicity
@@ -250,9 +204,7 @@ Inductive multiplicity : Type :=
   | single   : multiplicity
   | mNone    : multiplicity.
 
-
-Inductive tie : Type :=
-  | Tie : P -> P -> multiplicity -> tie.
+Inductive tie : Type := Tie : P -> P -> multiplicity -> tie.
 
 Notation "P1 *-> P2" := (Tie (Peer P1) (Peer P2) multiple) (at level 20).
 Notation "P1 ?-> P2" := (Tie (Peer P1) (Peer P2) optional) (at level 20).
@@ -268,16 +220,15 @@ Proof. reflexivity. Qed.
 Example testNotation_noneTie: "x" N-> "y" = Tie (Peer "x") (Peer "y") mNone.
 Proof. reflexivity. Qed.
 
-
 Definition ties := partial_map (P*P) multiplicity.
 Definition NoTies: ties := @p_empty (P*P) multiplicity.
-Definition beq_pPair (x y: P*P): bool :=
-  match (x, y) with
-  | ((px1, px2), (py1, py2)) => andb (beq_peerType px1 py1) (beq_peerType px2 py2)
-  end.
 Definition tie_update (x: tie) (m: ties): ties :=
   match x with
-  | Tie p1 p2 mult => @p_update (P*P) multiplicity beq_pPair m (p1, p2) mult
+  | Tie p1 p2 mult => @p_update (P * P) multiplicity (fun x y =>
+      match (x, y) with
+        ((x1, x2), (y1, y2)) => if peer_dec x1 y1 then if peer_dec x2 y2 then true else false else false
+      end)
+      m (p1, p2) mult
   end.
 
 Example test_tieUpdate_1: (tie_update ("x" S-> "y") NoTies) (Peer "x", Peer "y") = Some single.
@@ -290,6 +241,8 @@ Notation "'Ties' [ t , .. , u ]" :=
   (at level 50).
 
 
+(** peer instances **)
+
 Definition typed_peer_instances := ListSet.set (p * P).
 
 Definition NoTypedInstances: typed_peer_instances := Datatypes.nil.
@@ -299,7 +252,7 @@ Fixpoint typed_peer_instances_add
   match instances, peer with
   | Datatypes.nil, _ => Datatypes.cons peer Datatypes.nil
   | Datatypes.cons (p', P') instances, (p, P) =>
-    if beq_peerInst p p'
+    if peer_instance_dec p p'
       then typed_peer_instances_add peer instances
       else Datatypes.cons (p', P') (typed_peer_instances_add peer instances)
   end.
@@ -309,7 +262,7 @@ Fixpoint typed_peer_instances_type
   match instances with
   | Datatypes.nil => None
   | Datatypes.cons (p', P') instances =>
-    if beq_peerInst p p'
+    if peer_instance_dec p p'
       then Some P'
       else typed_peer_instances_type instances p
   end.
@@ -329,19 +282,19 @@ Fixpoint typed_peer_instances_of_type
   | Datatypes.nil =>
     Datatypes.nil
   | Datatypes.cons (p', P') instances =>
-    if beq_peerType P P'
+    if peer_dec P P'
       then Datatypes.cons p' (typed_peer_instances_of_type instances P)
       else typed_peer_instances_of_type instances P
   end.
 
 Example test_peerTypingUpdate_1: typed_peer_instances_type
-                                    (typed_peer_instances_add (PeerInst 1, Peer "x")
-                                      (typed_peer_instances_add (PeerInst 2, Peer "y")
+                                    (typed_peer_instances_add (PeerInstance 1, Peer "x")
+                                      (typed_peer_instances_add (PeerInstance 2, Peer "y")
                                         NoTypedInstances))
-                                    (PeerInst 2) = Some (Peer "y").
+                                    (PeerInstance 2) = Some (Peer "y").
 Proof. reflexivity. Qed.
 
-Notation "p : P" := (PeerInst p, Peer P) (at level 40).
+Notation "p : P" := (PeerInstance p, Peer P) (at level 40).
 
 Notation "'TypedInstances' [ ]" := NoTypedInstances (at level 50).
 
@@ -354,20 +307,16 @@ Definition peer_instances := ListSet.set p.
 
 Definition NoInstances: peer_instances := ListSet.empty_set p.
 
-Definition eq_peer_instances_dec : forall x y : p, {x = y} + {x <> y}.
-  repeat decide equality.
-Defined.
-
 Definition peer_instances_add
   (instance: p) (instances: ListSet.set p): ListSet.set p :=
-  ListSet.set_add eq_peer_instances_dec instance instances.
+  ListSet.set_add peer_instance_dec instance instances.
 
 Definition single_peer_instance p := peer_instances_add p NoInstances.
 
 Notation "'Instances' [ ]" := NoInstances (at level 50).
 
 Notation "'Instances' [ i , .. , j ]" :=
-  (peer_instances_add (PeerInst i) .. (peer_instances_add (PeerInst j) NoInstances) ..)
+  (peer_instances_add (PeerInstance i) .. (peer_instances_add (PeerInstance j) NoInstances) ..)
   (at level 50).
 
 
@@ -403,10 +352,10 @@ Inductive var_locality : Type := LocalOrRemoteVar | RemoteVar.
 
 Fixpoint appears_free_in_t_locality x t locality : Prop :=
   match t with
-  | lambda x' type t => if beq_id x x' then appears_free_in_t_locality x t RemoteVar else appears_free_in_t_locality x t locality
+  | lambda x' type t => if id_dec x x' then appears_free_in_t_locality x t RemoteVar else appears_free_in_t_locality x t locality
   | app t0 t1 => appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 locality
   | idApp x' => match locality with
-    | LocalOrRemoteVar => if beq_id x x' then True else False
+    | LocalOrRemoteVar => if id_dec x x' then True else False
     | RemoteVar => False
     end
   | unit => False
@@ -417,11 +366,11 @@ Fixpoint appears_free_in_t_locality x t locality : Prop :=
   | asLocal t type => appears_free_in_t_locality x t LocalOrRemoteVar
   | asLocalFrom t0 type t1 => appears_free_in_t_locality x t0 LocalOrRemoteVar \/ appears_free_in_t_locality x t1 locality
   | asLocalIn x' t0 t1 type =>
-    if beq_id x x'
+    if id_dec x x'
       then appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 RemoteVar
       else appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 LocalOrRemoteVar
   | asLocalInFrom x' t0 t1 type t2 =>
-    if beq_id x x'
+    if id_dec x x'
       then appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 RemoteVar \/ appears_free_in_t_locality x t2 locality
       else appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 LocalOrRemoteVar \/ appears_free_in_t_locality x t2 locality
   | signal t => appears_free_in_t_locality x t locality
@@ -438,7 +387,7 @@ Definition appears_free_in_t x t := appears_free_in_t_locality x t LocalOrRemote
 Fixpoint appears_free_in_s x s : Prop :=
   match s with
   | placed x' type s0 t0 =>
-    if beq_id x x'
+    if id_dec x x'
       then appears_free_in_t x s0
       else appears_free_in_t x s0 \/ appears_free_in_s x t0
   | pUnit => False

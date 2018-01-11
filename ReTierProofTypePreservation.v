@@ -298,25 +298,43 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   ].
 
 - (* lambda *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_dyn.
 - (* app *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn. inversion H_stat.
-  rewrite <- H in H16. inversion H16.
-  apply substitution_t_relaxed with (U := T2). (* lemma has no proof yet... useless if not povable *)
-  + assumption.
-  + assumption.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_stat.
+  inversion H_dyn; subst.
+  + eapply T_App; try eassumption.
+    eapply IHfct; eassumption.
+  + eapply T_App; try eassumption.
+    eapply IHarg; eassumption.
+  + eapply substitution_t_relaxed; try eassumption. (* lemma has no proof yet... useless if not povable *)
+    inversion H6.
+    eassumption.
 - (* idApp *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_dyn.
 - (* unit *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_dyn.
 - (* none *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_dyn.
 - (* some *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_dyn.
+  assumption.
 - (* nil *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_dyn.
 - (* cons *)
-  intros theta' theta varEnv t' T P. intros H_stat H_dyn. inversion H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_stat.
+  inversion H_dyn; subst.
+  + apply T_Cons; try assumption.
+    eapply IHtc; eassumption.
+  + apply T_Cons; try assumption.
+    eapply IHtl; eassumption.
 
 
 - (* asLocal *)
@@ -326,8 +344,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
 
   apply tied_not_None in H8 as H3.
   apply tied_not_SomeMNone in H8 as H4.
-  inversion H_dyn.
-  subst.
+  inversion H_dyn; subst.
   + eapply aggregation.
     * eassumption.
     * eassumption.
@@ -338,41 +355,41 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
     * eapply transmittable_value_typing; eassumption.
   + eapply T_AsLocal.
     * assumption.
-    * eapply IHtarg; try eassumption.
+    * eapply IHtarg; eassumption.
     * assumption.
     * assumption.
 
 
 - (* asLocalFrom *)
-  intros theta' theta varEnv t' T P Hstat Hdyn.
-  inversion Hdyn; subst.
-  + inversion Hstat.
-    subst.
-    eapply transmittable_value_typing; eassumption.
-  + inversion Hstat.
-    inversion H4.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_stat.
+  subst.
+  inversion H_dyn; subst.
+  + apply T_AsLocalFrom; try assumption.
+    eapply IHtfrom; eassumption.
+  + eapply transmittable_value_typing; eassumption.
+  + inversion H_stat.
     subst.
     eapply T_AsLocalFrom.
     * assumption.
-    * simpl. eapply IHtarg; eassumption.
-    * simpl. assumption.
+    * eapply IHtarg; try eassumption.
+    * assumption.
     * assumption.
     
     
 - (* asLocalIn *)
-  intros theta' theta varEnv t' T P Hstat Hdyn.
-  inversion Hdyn.
-  inversion Hstat.
+  intros theta' theta varEnv t' T P H_stat H_dyn.
+  inversion H_stat.
   subst.
-  inversion H14.
-  subst.
-  eapply T_AsLocal.
-  + assumption.
-  + eapply substitution_t.
-    * eassumption.
-    * eapply transmittable_value_typing; eassumption.
-  + simpl. assumption.
-  + auto.
+  inversion H_dyn; subst.
+  + eapply T_Comp; try eassumption.
+    eapply IHtassign; try eassumption.
+  + eapply T_AsLocal.
+    * assumption.
+    * eapply substitution_t; try eassumption.
+      eapply transmittable_value_typing; eassumption.
+    * assumption.
+    * auto.
   
   
 - (* asLocalInFrom *)

@@ -152,9 +152,110 @@ Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSyste
   end.
 
 
+(*
+Definition context := t -> t.
+
+Inductive is_context: context -> Prop :=
+  | C_Hole: is_context (fun t => t)
+  | C_App_Left: forall t0 context,
+      is_context context ->
+      is_context (fun t => app (context t) t0)
+  | C_App_Right: forall v context,
+      value v ->
+      is_context context ->
+      is_context (fun t => app v (context t)).
+*)
+
+(*
+Inductive evaluation_congruence: t -> t -> t -> t -> Prop :=
+  | C_App_Left: forall t0 t0' t1,
+      evaluation_congruence t0 t0' (app t0 t1) (app t0' t1)
+  | C_App_Right: forall v t1 t1',
+      value v ->
+      evaluation_congruence t1 t1' (app v t1) (app v t1')
+  | C_Some: forall t t',
+      evaluation_congruence t t' (some t) (some t').
+*)
+
 Inductive evaluation_t : program -> peer_instances -> P -> t -> reactiveSystem -> peer_instances -> t -> reactiveSystem -> Prop :=
 
-  (* TODO: E_Context *)
+(*
+  | E_Context: forall program theta theta' P t t' rho rho' context,
+      is_context context ->
+      t <> context t ->
+      program :: theta : P |> t; rho == theta' ==> t'; rho' ->
+      program :: theta : P |> context t; rho == theta' ==> context t'; rho'
+*)
+(*
+  | E_Congruence: forall program theta theta' P t0 t0' t1 t1' rho rho',
+      evaluation_congruence t0 t0' t1 t1' ->
+      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
+      program :: theta : P |> t1; rho == theta' ==> t1'; rho'
+*)
+
+  (* contextual congruence *)
+
+  | EC_App_Left: forall program theta theta' P t0 t0' t1 rho rho',
+      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
+      program :: theta : P |> app t0 t1; rho == theta' ==> app t0' t1; rho'
+
+  | EC_App_Right: forall program theta theta' P v t1 t1' rho rho',
+      value v ->
+      program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
+      program :: theta : P |> app v t1; rho == theta' ==> app v t1'; rho'
+
+  | EC_Some: forall program theta theta' P t t' rho rho',
+      program :: theta : P |> t; rho == theta' ==> t'; rho' ->
+      program :: theta : P |> some t; rho == theta' ==> some t; rho'
+
+  | EC_Cons_Left: forall program theta theta' P t0 t0' t1 rho rho',
+      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
+      program :: theta : P |> cons t0 t1; rho == theta' ==> cons t0' t1; rho'
+
+  | EC_Cons_Right: forall program theta theta' P v t1 t1' rho rho',
+      value v ->
+      program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
+      program :: theta : P |> cons v t1; rho == theta' ==> cons v t1'; rho'
+
+  | EC_AsLocalFrom: forall program theta theta' P S t0 t1 t1' rho rho',
+      program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
+        program :: theta : P |> asLocalFrom t0 (*:*) S (*from*) t1; rho
+        == theta' ==> asLocalFrom t0 (*:*) S (*from*) t1'; rho'
+
+  | EC_Comp: forall program theta theta' P S x t0 t0' t1 rho rho',
+      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
+        program :: theta : P |> asLocalIn x (*=*) t0 (*in*) t1 (*:*) S; rho
+        == theta' ==> asLocalIn x (*=*) t0' (*in*) t1 (*:*) S; rho'
+
+  | EC_CompFrom_Right: forall program theta theta' P S x t0 t1 t2 t2' rho rho',
+      program :: theta : P |> t2; rho == theta' ==> t2'; rho' ->
+        program :: theta : P |> asLocalInFrom x (*=*) t0 (*in*) t1 (*:*) S (*from*) t2; rho
+        == theta' ==> asLocalInFrom x (*=*) t0 (*in*) t1 (*:*) S (*from*) t2'; rho'
+
+  | EC_CompFrom_Left: forall program theta theta' P S x v t0 t0' t1 rho rho',
+      value v ->
+      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
+        program :: theta : P |> asLocalInFrom x (*=*) t0 (*in*) t1 (*:*) S (*from*) v; rho
+        == theta' ==> asLocalInFrom x (*=*) t0' (*in*) t1 (*:*) S (*from*) v; rho'
+
+  | EC_Var: forall program theta theta' P t t' rho rho',
+      program :: theta : P |> t; rho == theta' ==> t'; rho' ->
+      program :: theta : P |> var t; rho == theta' ==> var t; rho'
+
+  | EC_Now: forall program theta theta' P t t' rho rho',
+      program :: theta : P |> t; rho == theta' ==> t'; rho' ->
+      program :: theta : P |> now t; rho == theta' ==> now t; rho'
+
+  | EC_Set_Left: forall program theta theta' P t0 t0' t1 rho rho',
+      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
+      program :: theta : P |> set t0 (*:=*) t1; rho == theta' ==> set t0' (*:=*) t1; rho'
+
+  | EC_Set_Right: forall program theta theta' P v t1 t1' rho rho',
+      value v ->
+      program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
+      program :: theta : P |> set v (*:=*) t1; rho == theta' ==> set v (*:=*) t1'; rho'
+
+  (* local computation *)
 
   | E_App: forall program theta P x v t T rho,
       value v ->

@@ -24,21 +24,20 @@ Reserved Notation "program :: s ; rho == theta ==> s' ; rho'"
 
 (** auxiliary functions for aggegation **)
 
-  Fixpoint Phi (ties: ties) (P0 P1: P) (peers: ListSet.set p) (value: t) (type: T): option t :=
-    match (ties (P0, P1), peers) with
-    | (Some multiple, Datatypes.cons peer peers) => match Phi ties P0 P1 peers value type with
-      | Some peers => Some (cons value peers)
-      | None => None
-      end
-    | (Some multiple, Datatypes.nil) => Some (nil type)
-    | (Some optional, Datatypes.cons peer Datatypes.nil) => Some (some value)
-    | (Some optional, Datatypes.nil) => Some (none type)
-    | (Some optional, _) => None
-    | (Some single, Datatypes.cons peer Datatypes.nil) => Some value
-    | (Some single, _) => None
-    | (Some mNone, _) => None
-    | (None, _) => None
-    end.
+Fixpoint Phi (ties: ties) (P0 P1: P) (peers: ListSet.set p) (value: t) (type: T): option t :=
+  match ties (P0, P1), peers with
+  | Multiple, Datatypes.cons peer peers => match Phi ties P0 P1 peers value type with
+    | Datatypes.Some peers => Datatypes.Some (cons value peers)
+    | Datatypes.None => Datatypes.None
+    end
+  | Multiple, Datatypes.nil => Datatypes.Some (nil type)
+  | Optional, Datatypes.cons peer Datatypes.nil => Datatypes.Some (some value)
+  | Optional, Datatypes.nil => Datatypes.Some (none type)
+  | Optional, _ => Datatypes.None
+  | Single, Datatypes.cons peer Datatypes.nil => Datatypes.Some value
+  | Single, _ => Datatypes.None
+  | None, _ => Datatypes.None
+  end.
 
 
 (* --------------------------------------------------------------------- *)

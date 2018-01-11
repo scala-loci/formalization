@@ -8,28 +8,6 @@ Require Import ReTierProofAggregation.
 
 
 
-Lemma tied_not_None: forall program P1 P2,
-  are_peers_tied program P1 P2 -> (peer_ties program) (P1, P2) <> None.
-Proof.
-  intros program P1 P2.
-  unfold are_peers_tied. destruct ((peer_ties program) (P1, P2)).
-  1-2: intros; congruence.
-Qed.
-
-Lemma tied_not_SomeMNone: forall program P1 P2,
-  are_peers_tied program P1 P2 -> (peer_ties program) (P1, P2) <> (Some mNone).
-Proof.
-  intros program P1 P2.
-  unfold are_peers_tied. simpl. destruct ((peer_ties program) (P1, P2)).
-
-  1-2: unfold not; intros.
-  1: destruct m.
-  1-5: congruence.
-Qed.
-
-
-
-
 Lemma substitution_t_relaxed:
   forall program Psi Delta Gamma P x t T v U,
   program :: Psi; Delta; idUpdate x U Gamma; P |- t : T ->
@@ -342,11 +320,8 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   inversion H_stat.
   subst.
 
-  apply tied_not_None in H8 as H3.
-  apply tied_not_SomeMNone in H8 as H4.
   inversion H_dyn; subst.
   + eapply aggregation.
-    * eassumption.
     * eassumption.
     * eassumption.
     * eassumption.

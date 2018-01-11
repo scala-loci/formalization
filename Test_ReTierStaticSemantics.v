@@ -19,7 +19,7 @@ Require Import ReTierSyntax.
 Definition testPsi1: reactEnv   := reactUpdate (Reactive 0) Unit reactEmpty.
 Definition testGamma1: varEnv   := idUpdate (Id "x") Tnat (idUpdate (Id "y") Unit idEmpty).
 Definition testDelta1: placeEnv := idUpdate (Id "x") (Unit on (Peer "px")) idEmpty.
-Definition testTies1  := Ties ["p0" *-> "pm", "p0" ?-> "po", "p0" S-> "ps", "p0" N-> "pn"].
+Definition testTies1  := Ties ["p0" -*-> "pm", "p0" -?-> "po", "p0" -1-> "ps", "p0" -0-> "pn"].
 Definition testPeerTyping1 := TypedInstances [4 : "pm", 3 : "po", 2 : "ps", 1 : "pn", 0 : "p0"].
 
 Example test_pltIsWellTyped_TEnd_1:
@@ -121,7 +121,7 @@ Proof. apply T_Peer. reflexivity. Qed.
 
 Example test_hasType_TAsLocal_single_1:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "ps") = Some single /\
+  testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocal unit (Unit on (Peer "ps")) : Unit.
@@ -131,14 +131,14 @@ Proof.
   - apply T_AsLocal with (P0 := (Peer "p0")).
     + apply U_Unit.
     + apply T_Unit.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
 
 Example test_hasType_TAsLocal_optional_1:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "po") = Some optional /\
+  testTies1 (Peer "p0", Peer "po") = Optional /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocal unit (Unit on (Peer "po")) : Option Unit.
@@ -148,14 +148,14 @@ Proof.
   - apply T_AsLocal with (P0 := (Peer "p0")).
     + apply U_Unit.
     + apply T_Unit.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
 
 Example test_hasType_TAsLocal_multiple_1:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "pm") = Some multiple /\
+  testTies1 (Peer "p0", Peer "pm") = Multiple /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocal unit (Unit on (Peer "pm")) : List Unit.
@@ -165,7 +165,7 @@ Proof.
   - apply T_AsLocal with (P0 := (Peer "p0")).
     + apply U_Unit.
     + apply T_Unit.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
@@ -173,7 +173,7 @@ Qed.
 Example test_hasType_TAsLocalFrom_single_1:
   (* ensure test setup is correct ... *)
   typed_peer_instances_type testPeerTyping1 (PeerInstance 2) = Some (Peer "ps") /\
-  testTies1 (Peer "p0", Peer "ps") = Some single /\
+  testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalFrom unit (Unit on (Peer "ps")) (peerApp (PeerInstance 2)) : Unit.
@@ -185,7 +185,7 @@ Proof.
     + apply T_AsLocalFrom with (P0 := Peer "p0").
       * apply U_Unit.
       * apply T_Unit.
-      * reflexivity.
+      * cbv. congruence.
       * apply T_Peer. reflexivity.
 Qed.
 
@@ -193,7 +193,7 @@ Qed.
 Example test_hasType_TAsLocalFrom_optional_1:
   (* ensure test setup is correct ... *)
   typed_peer_instances_type testPeerTyping1 (PeerInstance 3) = Some (Peer "po") /\
-  testTies1 (Peer "p0", Peer "po") = Some optional /\
+  testTies1 (Peer "p0", Peer "po") = Optional /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalFrom unit (Unit on (Peer "po")) (peerApp (PeerInstance 3)) : Unit.
@@ -205,7 +205,7 @@ Proof.
     + apply T_AsLocalFrom with (P0 := Peer "p0").
       * apply U_Unit.
       * apply T_Unit.
-      * reflexivity.
+      * cbv. congruence.
       * apply T_Peer. reflexivity.
 Qed.
 
@@ -213,7 +213,7 @@ Qed.
 Example test_hasType_TAsLocalFrom_multiple_1:
   (* ensure test setup is correct ... *)
   typed_peer_instances_type testPeerTyping1 (PeerInstance 4) = Some (Peer "pm") /\
-  testTies1 (Peer "p0", Peer "pm") = Some multiple /\
+  testTies1 (Peer "p0", Peer "pm") = Multiple /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalFrom unit (Unit on (Peer "pm")) (peerApp (PeerInstance 4)) : Unit.
@@ -225,14 +225,14 @@ Proof.
     + apply T_AsLocalFrom with (P0 := Peer "p0").
       * apply U_Unit.
       * apply T_Unit.
-      * reflexivity.
+      * cbv. congruence.
       * apply T_Peer. reflexivity.
 Qed.
 
 
 Example test_hasType_TComp_single_1:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "ps") = Some single /\
+  testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalIn (Id "x") unit unit (Unit on (Peer "ps")) : Unit.
@@ -244,14 +244,14 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Unit.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
 
 Example test_hasType_TComp_optional_1:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "po") = Some optional /\
+  testTies1 (Peer "p0", Peer "po") = Optional /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalIn (Id "x") unit unit (Unit on (Peer "po")) : Option Unit.
@@ -263,14 +263,14 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Unit.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
 
 Example test_hasType_TComp_multiple_1:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "pm") = Some multiple /\
+  testTies1 (Peer "p0", Peer "pm") = Multiple /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalIn (Id "x") unit unit (Unit on (Peer "pm")) : List Unit.
@@ -282,14 +282,14 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Unit.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
 
 Example test_hasType_TComp_single_2:
   (* ensure test setup is correct ... *)
-  testTies1 (Peer "p0", Peer "ps") = Some single /\
+  testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalIn (Id "x") unit (idApp (Id "x")) (Unit on (Peer "ps")) : Unit.
@@ -301,7 +301,7 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Var. left. reflexivity.
-    + reflexivity.
+    + cbv. congruence.
     + reflexivity.
 Qed.
 
@@ -309,7 +309,7 @@ Qed.
 Example test_hasType_TCompFrom_single_1:
   (* ensure test setup is correct ... *)
   typed_peer_instances_type testPeerTyping1 (PeerInstance 2) = Some (Peer "ps") /\
-  testTies1 (Peer "p0", Peer "ps") = Some single /\
+  testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalInFrom (Id "x") (*=*) unit (*in*) unit (*:*) (Unit on (Peer "ps"))
@@ -325,7 +325,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * apply T_Unit.
-      * reflexivity.
+      * cbv. congruence.
       * apply T_Peer. reflexivity.
 Qed.
 
@@ -333,7 +333,7 @@ Qed.
 Example test_hasType_TCompFrom_single_2:
   (* ensure test setup is correct ... *)
   typed_peer_instances_type testPeerTyping1 (PeerInstance 2) = Some (Peer "ps") /\
-  testTies1 (Peer "p0", Peer "ps") = Some single /\
+  testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: emptyReactEnv; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x"))
@@ -350,7 +350,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * apply T_Var. left. reflexivity.
-      * reflexivity.
+      * cbv. congruence.
       * apply T_Peer. reflexivity.
 Qed.
 

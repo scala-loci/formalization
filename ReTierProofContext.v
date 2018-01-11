@@ -30,7 +30,7 @@ Qed.
 
 
 Lemma gamma_typing : forall (Gamma: varEnv) (x: id),
-  Gamma x = None \/ (exists T, Gamma x = Some T).
+  Gamma x = Datatypes.None \/ (exists T, Gamma x = Datatypes.Some T).
 Proof.
 intros.
 destruct Gamma as [ T' |].
@@ -40,7 +40,7 @@ Qed.
 
 
 Lemma delta_typing : forall (Delta: placeEnv) (x: id),
-  Delta x = None \/ (exists T P, Delta x = Some (T on P)).
+  Delta x = Datatypes.None \/ (exists T P, Delta x = Datatypes.Some (T on P)).
 Proof.
 intros.
 destruct Delta.
@@ -367,7 +367,7 @@ Qed.
 Lemma context_invariance_t : forall program Psi Delta Delta' Gamma Gamma' P t T,
   program :: Psi; Delta; Gamma; P |- t : T ->
   (forall x, appears_free_in_t_locality x t LocalOrRemoteVar ->
-   Gamma x = Gamma' x /\ (Gamma x = None -> Delta x = Delta' x)) ->
+   Gamma x = Gamma' x /\ (Gamma x = Datatypes.None -> Delta x = Delta' x)) ->
   (forall x, appears_free_in_t_locality x t RemoteVar ->
    Delta x = Delta' x) ->
   program :: Psi; Delta'; Gamma'; P |- t : T.

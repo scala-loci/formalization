@@ -198,46 +198,45 @@ Inductive s : Type :=
 
 (** ties **)
 
-Inductive multiplicity : Type :=
-  | multiple : multiplicity
-  | optional : multiplicity
-  | single   : multiplicity
-  | mNone    : multiplicity.
+Inductive multiplicity : Type := Multiple | Optional | Single | None.
 
 Inductive tie : Type := Tie : P -> P -> multiplicity -> tie.
 
-Notation "P1 *-> P2" := (Tie (Peer P1) (Peer P2) multiple) (at level 20).
-Notation "P1 ?-> P2" := (Tie (Peer P1) (Peer P2) optional) (at level 20).
-Notation "P1 S-> P2" := (Tie (Peer P1) (Peer P2) single) (at level 20).
-Notation "P1 N-> P2" := (Tie (Peer P1) (Peer P2) mNone) (at level 20).
+Notation "P1 -*-> P2" := (Tie (Peer P1) (Peer P2) Multiple) (at level 20).
+Notation "P1 -?-> P2" := (Tie (Peer P1) (Peer P2) Optional) (at level 20).
+Notation "P1 -1-> P2" := (Tie (Peer P1) (Peer P2) Single) (at level 20).
+Notation "P1 -0-> P2" := (Tie (Peer P1) (Peer P2) None) (at level 20).
 
-Example testNotation_multipleTie: "x" *-> "y" = Tie (Peer "x") (Peer "y") multiple.
+Example testNotation_multipleTie: "x" -*-> "y" = Tie (Peer "x") (Peer "y") Multiple.
 Proof. reflexivity. Qed.
-Example testNotation_optionalTie: "x" ?-> "y" = Tie (Peer "x") (Peer "y") optional.
+Example testNotation_optionalTie: "x" -?-> "y" = Tie (Peer "x") (Peer "y") Optional.
 Proof. reflexivity. Qed.
-Example testNotation_singleTie: "x" S-> "y" = Tie (Peer "x") (Peer "y") single.
+Example testNotation_singleTie: "x" -1-> "y" = Tie (Peer "x") (Peer "y") Single.
 Proof. reflexivity. Qed.
-Example testNotation_noneTie: "x" N-> "y" = Tie (Peer "x") (Peer "y") mNone.
+Example testNotation_noneTie: "x" -0-> "y" = Tie (Peer "x") (Peer "y") None.
 Proof. reflexivity. Qed.
 
-Definition ties := partial_map (P*P) multiplicity.
-Definition NoTies: ties := @p_empty (P*P) multiplicity.
-Definition tie_update (x: tie) (m: ties): ties :=
-  match x with
-  | Tie p1 p2 mult => @p_update (P * P) multiplicity (fun x y =>
-      match (x, y) with
-        ((x1, x2), (y1, y2)) => if peer_dec x1 y1 then if peer_dec x2 y2 then true else false else false
-      end)
-      m (p1, p2) mult
+Definition ties := total_map (P * P) multiplicity.
+
+Definition NoTies: ties := t_empty None.
+
+Definition ties_add (new_tie: tie) (current_ties: ties): ties :=
+  match new_tie with Tie p1 p2 mult => t_update
+    (fun x y => match x, y with (x1, x2), (y1, y2) =>
+      if peer_dec x1 y1 then if peer_dec x2 y2 then true else false else false
+    end) current_ties (p1, p2) mult
   end.
 
-Example test_tieUpdate_1: (tie_update ("x" S-> "y") NoTies) (Peer "x", Peer "y") = Some single.
+Example test_tiesAdd_1: (ties_add ("x" -1-> "y") NoTies) (Peer "x", Peer "y") = Single.
+Proof. reflexivity. Qed.
+
+Example test_tiesAdd_2: (ties_add ("x" -1-> "y") NoTies) (Peer "y", Peer "x") = None.
 Proof. reflexivity. Qed.
 
 Notation "'Ties' [ ]" := NoTies (at level 50).
 
 Notation "'Ties' [ t , .. , u ]" :=
-  (tie_update t .. (tie_update u NoTies) ..)
+  (ties_add t .. (ties_add u NoTies) ..)
   (at level 50).
 
 
@@ -260,10 +259,10 @@ Fixpoint typed_peer_instances_add
 Fixpoint typed_peer_instances_type
     (instances: typed_peer_instances) (p: p): option P :=
   match instances with
-  | Datatypes.nil => None
+  | Datatypes.nil => Datatypes.None
   | Datatypes.cons (p', P') instances =>
     if peer_instance_dec p p'
-      then Some P'
+      then Datatypes.Some P'
       else typed_peer_instances_type instances p
   end.
 
@@ -287,11 +286,11 @@ Fixpoint typed_peer_instances_of_type
       else typed_peer_instances_of_type instances P
   end.
 
-Example test_peerTypingUpdate_1: typed_peer_instances_type
-                                    (typed_peer_instances_add (PeerInstance 1, Peer "x")
-                                      (typed_peer_instances_add (PeerInstance 2, Peer "y")
-                                        NoTypedInstances))
-                                    (PeerInstance 2) = Some (Peer "y").
+Example test_typedPeerInstancesAdd_1: typed_peer_instances_type
+                                        (typed_peer_instances_add (PeerInstance 1, Peer "x")
+                                          (typed_peer_instances_add (PeerInstance 2, Peer "y")
+                                            NoTypedInstances))
+                                        (PeerInstance 2) = Some (Peer "y").
 Proof. reflexivity. Qed.
 
 Notation "p : P" := (PeerInstance p, Peer P) (at level 40).
@@ -340,12 +339,7 @@ Definition peer_instance_type program p: option P :=
     Program _ instances => typed_peer_instances_type instances p
   end.
 
-Definition are_peers_tied program P0 P1: Prop :=
-  match (peer_ties program) (P0, P1) with
-  | None        => False
-  | Some mNone  => False
-  | Some _      => True
-  end.
+Definition peers_tied program P0 P1: Prop := (peer_ties program) (P0, P1) <> None.
 
 
 Inductive var_locality : Type := LocalOrRemoteVar | RemoteVar.

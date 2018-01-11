@@ -4,7 +4,7 @@ Require Import ReTierDynamicSemantics.
 
 Lemma aggregation_multiple:
   forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type,
-  (peer_ties program) (P0, P1) = Some multiple ->
+  peer_ties program (P0, P1) = Multiple ->
   value v ->
   transmittable_type v_type ->
   program :: Psi; Delta; Gamma; P |- v : v_type ->
@@ -56,7 +56,7 @@ Qed.
 
 Lemma aggregation_optional:
   forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type,
-  (peer_ties program) (P0, P1) = Some optional ->
+  peer_ties program (P0, P1) = Optional ->
   value v ->
   transmittable_type v_type ->
   program :: Psi; Delta; Gamma; P |- v : v_type ->
@@ -89,7 +89,7 @@ Qed.
 
 Lemma aggregation_single:
   forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type,
-  (peer_ties program) (P0, P1) = Some single ->
+  peer_ties program (P0, P1) = Single ->
   value v ->
   transmittable_type v_type ->
   program :: Psi; Delta; Gamma; P |- v : v_type ->
@@ -117,8 +117,7 @@ Qed.
 
 Lemma aggregation:
   forall program Psi Delta Gamma P P0 P1 peers v v_agg v_type v_agg_type,
-  (peer_ties program) (P0, P1) <> None ->
-  (peer_ties program) (P0, P1) <> Some mNone ->
+  peers_tied program P0 P1 ->
   Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg ->
   phi (peer_ties program) P0 P1 v_type = Some v_agg_type ->
   value v ->
@@ -129,15 +128,13 @@ Lemma aggregation:
     program :: Psi; Delta; Gamma; P |- v_agg : v_agg_type.
 Proof.
 intros until v_agg_type.
-intros H_tie0 H_tie1 H_Phi H_phi_type H_value H_transmittable H_type.
-case_eq ((peer_ties program) (P0, P1)).
-- intros multiplicity H_tie.
-  unfold phi in H_phi_type.
-  rewrite H_tie in H_phi_type.
-  destruct multiplicity; inversion H_phi_type; subst.
-  + eapply aggregation_multiple; eassumption.
-  + eapply aggregation_optional; eassumption.
-  + eapply aggregation_single; eassumption.
-- contradiction.
+intros H_tied H_Phi H_phi_type H_value H_transmittable H_type.
+unfold phi in H_phi_type.
+remember (peer_ties program (P0, P1)) as multiplicity eqn:H_tie.
+symmetry in H_tie.
+destruct multiplicity; inversion H_phi_type; subst.
+- eapply aggregation_multiple; eassumption.
+- eapply aggregation_optional; eassumption.
+- eapply aggregation_single; eassumption.
 Qed.
 

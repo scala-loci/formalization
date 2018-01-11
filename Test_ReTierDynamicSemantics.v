@@ -325,7 +325,7 @@ Definition testCurentValue_2:
 Proof. reflexivity. Qed.
 
 Definition testCurentValue_3:
-  currentValue (Reactive 99) (snd testReactSys_p_2) = (None,  (snd testReactSys_p_2)).
+  currentValue (Reactive 99) (snd testReactSys_p_2) = (Datatypes.None,  (snd testReactSys_p_2)).
 Proof. reflexivity. Qed.
 
 Definition testR1V2 := (lambda (Id "x") (*:*) Unit (*.*) unit).
@@ -345,7 +345,7 @@ Proof. reflexivity. Qed.
    Tests for relation 'localStep':
 *)
 
-Definition testTies1 := Ties ["p0" *-> "pm", "p0" ?-> "po", "p0" S-> "ps", "p0" N-> "pn"].
+Definition testTies1 := Ties ["p0" -*-> "pm", "p0" -?-> "po", "p0" -1-> "ps", "p0" -0-> "pn"].
 Definition testPeerTyping1 := TypedInstances [4: "pm", 3: "po", 2: "ps", 1: "pn", 0: "p0"].
 Definition testPeerInsts1 := Instances [4, 3, 2, 1, 0].
 

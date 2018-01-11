@@ -7,8 +7,8 @@ Require Import ReTierProofContext.
 Lemma substitution_t_generalized:
   forall program Psi Delta Gamma P x t T v U,
   (exists P',
-   Gamma x = None /\
-   (Delta x = None \/ Delta x = Some (U on P')) /\
+   Gamma x = Datatypes.None /\
+   (Delta x = Datatypes.None \/ Delta x = Datatypes.Some (U on P')) /\
    program :: Psi; Delta; Gamma; P |- t : T /\
    program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U) \/
   (program :: Psi; Delta; idUpdate x U Gamma; P |- t : T /\
@@ -207,11 +207,11 @@ Qed.
 
 Lemma substitution_s_generalized:
   forall program Psi Delta Gamma P P' x t T v U,
-  (Gamma x = None ->
+  (Gamma x = Datatypes.None ->
    program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
    program :: Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
    program :: Psi; Delta; Gamma; P |- subst_s_locality x v t LocalOrRemoteVar : T) /\
-  (Gamma x <> None ->
+  (Gamma x <> Datatypes.None ->
    program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
    program :: Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
    program :: Psi; Delta; Gamma; P |- subst_s_locality x v t RemoteVar : T).

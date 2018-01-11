@@ -39,14 +39,13 @@ Reserved Notation "program :: Psi ; Delta |- s"
 
 (** auxiliary functions for aggegation **)
 
-  Definition phi (ties: ties) (p0 p1: P) (type: T) :=
-    match ties (p0, p1) with
-    | Some multiple => Some (List type)
-    | Some optional => Some (Option type)
-    | Some single   => Some type
-    | Some mNone    => None
-    | None          => None
-    end.
+Definition phi (ties: ties) (p0 p1: P) (type: T): option T :=
+  match ties (p0, p1) with
+  | Multiple => Datatypes.Some (List type)
+  | Optional => Datatypes.Some (Option type)
+  | Single   => Datatypes.Some type
+  | None     => Datatypes.None
+  end.
 
 
 
@@ -59,7 +58,7 @@ Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T ->
   (* rules for local evaluation *)
 
   | T_Var: forall program Psi Delta Gamma P x T,
-      Gamma x = Some T \/ Gamma x = None /\ Delta x = Some (T on P) ->
+      Gamma x = Datatypes.Some T \/ Gamma x = Datatypes.None /\ Delta x = Datatypes.Some (T on P) ->
       program :: Psi; Delta; Gamma; P |- (idApp x) : T
 
   | T_App: forall program Psi Delta Gamma P t1 t2 T1 T2,
@@ -98,14 +97,14 @@ Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T ->
   | T_AsLocal: forall program Psi Delta Gamma P0 P1 t T0 T1,
       transmittable_type T1 ->
       program :: Psi; Delta; emptyVarEnv; P1 |- t : T1 ->
-      are_peers_tied program P0 P1 ->
+      peers_tied program P0 P1 ->
       phi (peer_ties program) P0 P1 T1 = Some T0 ->
       program :: Psi; Delta; Gamma; P0 |- asLocal t (T1 on P1) : T0
 
   | T_AsLocalFrom: forall program Psi Delta Gamma P0 P1 t0 t1 T,
       transmittable_type T ->
       program :: Psi; Delta; emptyVarEnv; P1 |- t0 : T ->
-      are_peers_tied program P0 P1 ->
+      peers_tied program P0 P1 ->
       program :: Psi; Delta; Gamma; P0 |- t1 : Remote P1 ->
       program :: Psi; Delta; Gamma; P0 |- asLocalFrom t0 (T on P1) t1 : T
 
@@ -114,7 +113,7 @@ Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T ->
       transmittable_type T0 ->
       program :: Psi; Delta; Gamma; P0 |- t0 : T0 ->
       program :: Psi; Delta; idUpdate x T0 emptyVarEnv; P1 |- t1 : T1 ->
-      are_peers_tied program P0 P1 ->
+      peers_tied program P0 P1 ->
       phi (peer_ties program) P0 P1 T1 = Some T2 ->
       program :: Psi; Delta; Gamma; P0 |- asLocalIn x t0 t1 (T1 on P1) : T2
 
@@ -123,7 +122,7 @@ Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T ->
       transmittable_type T0 ->
       program :: Psi; Delta; Gamma; P0 |- t0 : T0 ->
       program :: Psi; Delta; idUpdate x T0 emptyVarEnv; P1 |- t1 : T1 ->
-      are_peers_tied program P0 P1 ->
+      peers_tied program P0 P1 ->
       program :: Psi; Delta; Gamma; P0 |- t2 : Remote P1 ->
       program :: Psi; Delta; Gamma; P0 |- asLocalInFrom x t0 t1 (T1 on P1) t2 : T1
 

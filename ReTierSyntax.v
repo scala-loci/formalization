@@ -46,11 +46,6 @@ Definition idEmpty {V: Type} := p_empty id V.
 Definition idUpdate {V: Type} (k: id) (v: V) (m: idMap V): idMap V :=
   p_update (fun x y => if id_dec x y then true else false) m k v.
 
-Definition reactMap (V: Type) := partial_map r V.
-Definition reactEmpty {V: Type} := p_empty r V.
-Definition reactUpdate {V: Type} (k: r) (v: V) (m: reactMap V): reactMap V :=
-  p_update (fun x y => if reactive_dec x y then true else false) m k v.
-
 Example test_idEmpty_1: (@idEmpty nat) (Id "x") = None.
 Proof. reflexivity. Qed.
 

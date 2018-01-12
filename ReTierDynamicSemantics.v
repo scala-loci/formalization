@@ -1,5 +1,6 @@
 Require Import ReTierSyntax.
 Require Import Maps.
+Require Coq.Lists.List.
 Require Coq.Lists.ListSet.
 
 (**
@@ -119,35 +120,20 @@ Notation "[ id :=_s value ] term" := (subst_s id value term) (at level 30).
 
 
 
-Inductive reactiveSystem : Type :=
-  | ReactiveSystem: r -> ListSet.set r -> reactMap t -> reactiveSystem.
+Definition reactive_system := list t.
 
-Definition emptyReactSys := ReactiveSystem (Reactive 0) (ListSet.empty_set r) (reactEmpty).
+Definition reactive_system_lookup (r: r) (system: reactive_system): option t :=
+  match r with Reactive n => List.nth_error system n end.
 
-Lemma react_eq_dec : forall x y:r, {x = y} + {x <> y}.
-Proof. repeat decide equality. Qed.
+Definition reactive_system_add (t: t) (system: reactive_system): r * reactive_system :=
+  (Reactive (length system), List.app system (Datatypes.cons t Datatypes.nil)).
 
-(* no distinction here between allocation of signals and vars *)
-Definition reactAlloc (t: t) (rho: reactiveSystem): r * reactiveSystem :=
-  match rho with
-  | ReactiveSystem nextReact dom map
-    => match nextReact with
-       | Reactive n => (nextReact,
-                        ReactiveSystem (Reactive (n+1))
-                                       (ListSet.set_add react_eq_dec nextReact dom)
-                                       (reactUpdate nextReact t map))
-      end
-  end.
-
-Definition updateVar (r: r) (v: t) (rho: reactiveSystem): reactiveSystem :=
-  match rho with
-  | ReactiveSystem next dom map => ReactiveSystem next dom
-                                                  (reactUpdate r v map)
-  end.
-
-Definition currentValue (r: r) (rho: reactiveSystem): (option t) * reactiveSystem :=
-  match rho with
-  | ReactiveSystem _ _ map => (map r, rho)
+Fixpoint reactive_system_update (r: r) (t: t) (system: reactive_system): reactive_system :=
+  match r, system with
+  | _, Datatypes.nil => Datatypes.nil
+  | Reactive O, Datatypes.cons _ system => Datatypes.cons t system
+  | Reactive (Datatypes.S n), Datatypes.cons t' system =>
+    Datatypes.cons t' (reactive_system_update (Reactive n) t system)
   end.
 
 
@@ -176,7 +162,7 @@ Inductive evaluation_congruence: t -> t -> t -> t -> Prop :=
       evaluation_congruence t t' (some t) (some t').
 *)
 
-Inductive evaluation_t : program -> peer_instances -> P -> t -> reactiveSystem -> peer_instances -> t -> reactiveSystem -> Prop :=
+Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system -> peer_instances -> t -> reactive_system -> Prop :=
 
 (*
   | E_Context: forall program theta theta' P t t' rho rho' context,
@@ -297,31 +283,31 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactiveSystem -
   (* reactive rules *)
 
   | E_ReactiveVar: forall program theta P v r rho rho',
-      (r, rho') = reactAlloc v rho ->
       value v ->
+      reactive_system_add v rho = (r, rho') ->
         program :: theta : P |> var v; rho
         == theta ==> reactApp r; rho'
 
   | E_Signal: forall program theta P t r rho rho',
-      (r, rho') = reactAlloc t rho ->
+      reactive_system_add t rho = (r, rho')->
         program :: theta : P |> signal t; rho
         == theta ==> reactApp r; rho'
 
   | E_Set: forall program theta P v r rho rho',
-      rho' = updateVar r v rho ->
+      reactive_system_update r v rho = rho'->
       value v ->
         program :: theta : P |> set (reactApp r) (*:=*) v; rho
         == theta ==> unit; rho'
 
-  | E_Now: forall program theta P t r rho rho',
-      (Some t, rho') = currentValue r rho ->
+  | E_Now: forall program theta P t r rho,
+      reactive_system_lookup r rho = Some t ->
         program :: theta : P |> now (reactApp r); rho
-        == theta ==> t; rho'
+        == theta ==> t; rho
 
 where "program :: theta : P |> t ; rho == theta' ==> t' ; rho'" := (evaluation_t program theta P t rho theta' t' rho').
 
 
-Inductive evaluation_s : program -> s -> reactiveSystem -> peer_instances -> s -> reactiveSystem -> Prop :=
+Inductive evaluation_s : program -> s -> reactive_system -> peer_instances -> s -> reactive_system -> Prop :=
 
   | E_Placed: forall program theta P x t t' s T rho rho',
       program :: peer_instances_of_type program P : P |> t; rho == theta ==> t'; rho' ->

@@ -1,13 +1,9 @@
 Require Import ReTierSyntax.
 Require Import Maps.
+Require Coq.Lists.List.
 
-
-(** Typing environment for reactives, named Psi in informal specification. **)
-Definition reactEnv := partial_map r T.
-Definition emptyReactEnv: reactEnv := reactEmpty.
 
 (** Typing environment for placed variables, named Delta in informal specification. **)
-
 Definition placeEnv := partial_map id S.
 Definition emptyPlaceEnv: placeEnv := idEmpty.
 
@@ -52,8 +48,17 @@ Definition phi (ties: ties) (p0 p1: P) (type: T): option T :=
 (* --------------------------------------------------------------------- *)
 
 
+Definition reactiveEnv := list T.
 
-Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T -> Prop :=
+Definition reactive_type (r: r) (env: reactiveEnv): option T :=
+  match r with Reactive n => List.nth_error env n end.
+
+Definition reactive_type_add (T: T) (env: reactiveEnv): r * reactiveEnv :=
+  (Reactive (length env), List.app env (Datatypes.cons T Datatypes.nil)).
+
+
+
+Inductive typing_t : program -> reactiveEnv -> placeEnv -> varEnv -> P -> t -> T -> Prop :=
 
   (* rules for local evaluation *)
 
@@ -129,7 +134,7 @@ Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T ->
   (* rules for reactives *)
 
   | T_Reactive: forall program Psi Delta Gamma P r T,
-      Psi r = Some T -> 
+      reactive_type r Psi = Some T -> 
       program :: Psi; Delta; Gamma; P |- reactApp r : T
 
   | T_Signal: forall program Psi Delta Gamma P t T,
@@ -156,7 +161,7 @@ Inductive typing_t : program -> reactEnv -> placeEnv -> varEnv -> P -> t -> T ->
 where "program :: Psi ; Delta ; Gamma ; P |- t : T" := (typing_t program Psi Delta Gamma P t T).
 
 
-Inductive typing_s : program -> reactEnv -> placeEnv -> s -> Prop :=
+Inductive typing_s : program -> reactiveEnv -> placeEnv -> s -> Prop :=
   | T_End: forall program Psi Delta,
       program :: Psi; Delta |- pUnit
 

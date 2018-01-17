@@ -2,34 +2,6 @@ Require Import ReTierSyntax.
 Require Import ReTierStaticSemantics.
 
 
-Lemma transmittable_value_typing : forall program Psi Delta Delta' Gamma Gamma' P P' v T,
-  value v ->
-  transmittable_type T ->
-  program :: Psi; Delta; Gamma; P |- v : T ->
-  program :: Psi; Delta'; Gamma'; P' |- v : T.
-Proof.
-intros until T.
-intros H_value H_transmittable H_typing.
-generalize dependent T.
-induction v; intros; inversion H_value; inversion H_typing; subst.
-- inversion H_transmittable.
-- apply T_Unit.
-- apply T_None.
-- inversion H_transmittable.
-  apply T_Some.
-  apply IHv; assumption.
-- apply T_Nil.
-- inversion H_transmittable.
-  apply T_Cons.
-  + apply IHv1; assumption.
-  + apply IHv2; assumption.
-- apply T_Peer. assumption.
-- eapply T_Reactive; try eassumption.
-  admit.
-- apply T_Nat.
-Admitted.
-
-
 Lemma gamma_typing : forall (Gamma: varEnv) (x: id),
   Gamma x = Datatypes.None \/ (exists T, Gamma x = Datatypes.Some T).
 Proof.

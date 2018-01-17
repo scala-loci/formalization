@@ -376,9 +376,13 @@ Qed.
 
 Example testLocalStep_EComp_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalIn (Id "x") (*:*) Unit (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps")); testReactSys_0
+  asLocalIn (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")); testReactSys_0
   == Instances [ 2 ] ==> asLocal unit (*:*) (Unit on (Peer "ps")); testReactSys_0.
-Proof. apply E_Comp, v_unit. Qed.
+Proof.
+  apply E_Comp with (t' := unit).
+  - apply v_unit.
+  - reflexivity.
+Qed.
 
 
 Example testLocalStep_ERemote_1:
@@ -392,14 +396,18 @@ Example testLocalStep_EAsLocalFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0
   == testPeerInsts1 ==> unit; testReactSys_0.
-Proof. apply E_AsLocalFrom, v_unit. Qed.
+Proof. apply E_AsLocalFrom. - apply v_unit. - reflexivity. Qed.
 
 
 Example testLocalStep_ECompFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
   asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0
   == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0.
-Proof. apply E_CompFrom, v_unit. Qed.
+Proof.
+  apply E_CompFrom with (t' := unit).
+  - apply v_unit.
+  - reflexivity.
+Qed.
 
 
 Example testLocalStep_ERemoteFrom_1:

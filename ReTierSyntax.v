@@ -178,7 +178,6 @@ Inductive transmittable_type : T -> Prop :=
   | U_List : forall T, transmittable_type T -> transmittable_type (List T)
   | U_Remote : forall P, transmittable_type (Remote P)
   | U_Signal : forall T, transmittable_type T -> transmittable_type (Signal T)
-  | U_Var : forall T, transmittable_type T -> transmittable_type (Var T)
   | U_Tnat : transmittable_type Tnat.
 
 

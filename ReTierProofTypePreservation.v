@@ -3,6 +3,8 @@ Require Import ReTierStaticSemantics.
 Require Import ReTierDynamicSemantics.
 Require Import ReTierProofContext.
 Require Import ReTierProofSubstitution.
+Require Import ReTierProofReactiveSystem.
+Require Import ReTierProofTransmission.
 Require Import ReTierProofAggregation.
 
 
@@ -243,10 +245,11 @@ Admitted.
 Lemma preservation_nonReactive: forall t t' T theta theta' program Psi Delta Gamma P rho rho',
   program :: Psi; Delta; Gamma; P |- t : T ->
   program :: theta : P |> t; rho == theta' ==> t'; rho' ->
+  List.incl theta (peer_instances_of_type program P) ->
   program :: Psi; Delta; Gamma; P |- t' : T.
 Proof.
 intros t t' T theta theta' program Psi Delta Gamma P rho rho'.
-intros H_stat H_dyn.
+intros H_stat H_dyn H_inst.
 generalize dependent P.
 generalize dependent T.
 generalize dependent t'.
@@ -276,10 +279,10 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   ].
 
 - (* lambda *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
 - (* app *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_stat.
   inversion H_dyn; subst.
   + eapply T_App; try eassumption.
@@ -290,23 +293,23 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
     inversion H6.
     eassumption.
 - (* idApp *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
 - (* unit *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
 - (* none *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
 - (* some *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
   assumption.
 - (* nil *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
 - (* cons *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_stat.
   inversion H_dyn; subst.
   + apply T_Cons; try assumption.
@@ -316,55 +319,54 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
 
 
 - (* asLocal *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_stat.
   subst.
 
   inversion H_dyn; subst.
-  + eapply aggregation.
-    * eassumption.
-    * eassumption.
-    * eassumption.
-    * eassumption.
-    * eapply transmittable_value_typing in H2; eassumption.
-    * eapply transmittable_value_typing; eassumption.
+  + eapply aggregation; try eassumption.
+    apply List.incl_refl.
   + eapply T_AsLocal.
     * assumption.
-    * eapply IHtarg; eassumption.
+    * eapply IHtarg; try eassumption.
+      apply List.incl_refl.
     * assumption.
     * assumption.
 
 
 - (* asLocalFrom *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_stat.
   subst.
   inversion H_dyn; subst.
   + apply T_AsLocalFrom; try assumption.
     eapply IHtfrom; eassumption.
-  + eapply transmittable_value_typing; eassumption.
+  + inversion H11.
+    eapply transmission; eassumption.
   + inversion H_stat.
     subst.
     eapply T_AsLocalFrom.
     * assumption.
-    * eapply IHtarg; try eassumption.
+    * inversion H11.
+      eapply IHtarg; eassumption.
     * assumption.
     * assumption.
     
     
 - (* asLocalIn *)
-  intros theta' theta varEnv t' T' P H_stat H_dyn.
+  intros theta' theta varEnv t' T1 P H_stat H_dyn H_inst.
   inversion H_stat.
   subst.
   inversion H_dyn; subst.
   + eapply T_Comp; try eassumption.
     eapply IHtassign; try eassumption.
-  + eapply T_AsLocal.
-    * assumption.
-    * eapply substitution_t; try eassumption.
-      eapply transmittable_value_typing; eassumption.
-    * assumption.
-    * auto.
+  + eapply T_AsLocal; try assumption.
+    eapply substitution_t; try eassumption.
+    eapply transmission; try eassumption.
+    unfold peers_tied in H14.
+    destruct H14.
+    unfold peers_tied.
+    split; assumption.
   
   
 - (* asLocalInFrom *)

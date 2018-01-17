@@ -25,17 +25,25 @@ Reserved Notation "program :: s ; rho == theta ==> s' ; rho'"
 
 (** auxiliary functions for aggegation **)
 
-Fixpoint Phi (ties: ties) (P0 P1: P) (peers: ListSet.set p) (value: t) (type: T): option t :=
-  match ties (P0, P1), peers with
-  | Multiple, Datatypes.cons peer peers => match Phi ties P0 P1 peers value type with
-    | Datatypes.Some peers => Datatypes.Some (cons value peers)
+Fixpoint zeta (P: P) (theta: peer_instances) (v: t) (T: T): t :=
+  match v, T with
+  | cons v0 v1, List T => cons (zeta P theta v0 T) (zeta P theta v1 (List T))
+  | some v, Option T => some (zeta P theta v T)
+  | reactApp r, Signal T => signal (asLocalInFrom (Id "") Unit unit (now v) (T on P) (peerApp theta))
+  | _, _ => v
+  end.
+
+Fixpoint Phi (ties: ties) (P0 P1: P) (theta: ListSet.set p) (v: t) (T: T): option t :=
+  match ties (P0, P1), theta with
+  | Multiple, Datatypes.cons peer peers => match Phi ties P0 P1 peers v T with
+    | Datatypes.Some peers => Datatypes.Some (cons (zeta P1 (peer_instances_add peer NoInstances) v T) peers)
     | Datatypes.None => Datatypes.None
     end
-  | Multiple, Datatypes.nil => Datatypes.Some (nil type)
-  | Optional, Datatypes.cons peer Datatypes.nil => Datatypes.Some (some value)
-  | Optional, Datatypes.nil => Datatypes.Some (none type)
+  | Multiple, Datatypes.nil => Datatypes.Some (nil T)
+  | Optional, Datatypes.cons peer Datatypes.nil => Datatypes.Some (some (zeta P1 (peer_instances_add peer NoInstances) v T))
+  | Optional, Datatypes.nil => Datatypes.Some (none T)
   | Optional, _ => Datatypes.None
-  | Single, Datatypes.cons peer Datatypes.nil => Datatypes.Some value
+  | Single, Datatypes.cons peer Datatypes.nil => Datatypes.Some (zeta P1 (peer_instances_add peer NoInstances) v T)
   | Single, _ => Datatypes.None
   | None, _ => Datatypes.None
   end.
@@ -255,25 +263,28 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         program :: theta : P0 |> asLocal v (*:*) (T on P1); rho
         == theta ==> v'; rho
 
-  | E_Comp: forall program theta P0 P1 x v t T0 T1 rho,
+  | E_Comp: forall program theta P0 P1 x v t t' T0 T1 rho,
       value v ->
+      zeta P0 theta v T0 = t' ->
         program :: theta : P0 |> asLocalIn x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1); rho
-        == peer_instances_of_type program P1 ==> asLocal ([x :=_t v] t) (*:*) (T1 on P1); rho
+        == peer_instances_of_type program P1 ==> asLocal ([x :=_t t'] t) (*:*) (T1 on P1); rho
 
   | E_Remote: forall program theta theta' P0 P1 t t' T rho rho',
       program :: peer_instances_of_type program P1 : P1 |> t; rho == theta' ==> t'; rho' ->
         program :: theta : P0 |> asLocal t (*:*) (T on P1); rho
         == theta' ==> asLocal t' (*:*) (T on P1); rho'
 
-  | E_AsLocalFrom: forall program theta theta' P0 P1 v T rho,
+  | E_AsLocalFrom: forall program theta theta' P0 P1 v t T rho,
       value v ->
+      zeta P1 theta' v T = t ->
         program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) (peerApp theta'); rho
-        == theta ==> v; rho
+        == theta ==> t; rho
 
-  | E_CompFrom: forall program theta theta' P0 P1 x v t T0 T1 rho,
+  | E_CompFrom: forall program theta theta' P0 P1 x v t t' T0 T1 rho,
       value v ->
+      zeta P0 theta v T0 = t' ->
         program :: theta : P0 |> asLocalInFrom x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
-        == theta' ==> asLocalFrom ([x :=_t v] t) (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
+        == theta' ==> asLocalFrom ([x :=_t t'] t) (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
 
   | E_RemoteFrom: forall program theta theta' theta'' P0 P1 t t' T rho rho',
       program :: theta'' : P1 |> t; rho == theta' ==> t'; rho' ->

@@ -327,7 +327,8 @@ Definition peer_instances_of_type program P: ListSet.set p :=
     Program _ instances => typed_peer_instances_of_type instances P
   end.
 
-Definition peers_tied program P0 P1: Prop := (peer_ties program) (P0, P1) <> None.
+Definition peers_tied program P0 P1: Prop :=
+  (peer_ties program) (P0, P1) <> None /\ (peer_ties program) (P1, P0) <> None.
 
 
 Inductive var_locality : Type := LocalOrRemoteVar | RemoteVar.

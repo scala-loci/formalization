@@ -20,8 +20,11 @@ Definition testPsi0: reactiveEnv := Datatypes.nil.
 Definition testPsi1: reactiveEnv := Datatypes.cons (Signal Unit on Peer "_") Datatypes.nil.
 Definition testGamma1: varEnv := idUpdate (Id "x") Tnat (idUpdate (Id "y") Unit idEmpty).
 Definition testDelta1: placeEnv := idUpdate (Id "x") (Unit on (Peer "px")) idEmpty.
-Definition testTies1 := Ties ["p0" -*-> "pm", "p0" -?-> "po", "p0" -1-> "ps", "p0" -0-> "pn"].
-Definition testPeerTyping1 := TypedInstances [4 : "pm", 3 : "po", 2 : "ps", 1 : "pn", 0 : "p0"].
+Definition testTies1 := Ties [
+  "p0" -*-> "pm", "p0" -?-> "po", "p0" -1-> "ps", "p0" -0-> "pn",
+  "pm" -1-> "p0", "po" -1-> "p0", "ps" -1-> "p0", "pn" -1-> "p0"].
+Definition testPeerTyping1 := TypedInstances [
+  4 : "pm", 3 : "po", 2 : "ps", 1 : "pn", 0 : "p0"].
 
 Example test_pltIsWellTyped_TEnd_1:
   (Program NoTies NoTypedInstances) :: testPsi0; emptyPlaceEnv |- pUnit.
@@ -132,7 +135,7 @@ Proof.
   - apply T_AsLocal with (P0 := (Peer "p0")).
     + apply U_Unit.
     + apply T_Unit.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -149,7 +152,7 @@ Proof.
   - apply T_AsLocal with (P0 := (Peer "p0")).
     + apply U_Unit.
     + apply T_Unit.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -166,7 +169,7 @@ Proof.
   - apply T_AsLocal with (P0 := (Peer "p0")).
     + apply U_Unit.
     + apply T_Unit.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -186,7 +189,7 @@ Proof.
     + apply T_AsLocalFrom with (P0 := Peer "p0").
       * apply U_Unit.
       * apply T_Unit.
-      * cbv. congruence.
+      * cbv. { split. - congruence. - congruence. }
       * apply T_Peer. simpl. congruence.
 Qed.
 
@@ -206,7 +209,7 @@ Proof.
     + apply T_AsLocalFrom with (P0 := Peer "p0").
       * apply U_Unit.
       * apply T_Unit.
-      * cbv. congruence.
+      * cbv. { split. - congruence. - congruence. }
       * apply T_Peer. simpl. congruence.
 Qed.
 
@@ -226,7 +229,7 @@ Proof.
     + apply T_AsLocalFrom with (P0 := Peer "p0").
       * apply U_Unit.
       * apply T_Unit.
-      * cbv. congruence.
+      * cbv. { split. - congruence. - congruence. }
       * apply T_Peer. simpl. congruence.
 Qed.
 
@@ -245,7 +248,7 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Unit.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -264,7 +267,7 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Unit.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -283,7 +286,7 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Unit.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -302,7 +305,7 @@ Proof.
     + apply U_Unit.
     + apply T_Unit.
     + apply T_Var. left. reflexivity.
-    + cbv. congruence.
+    + cbv. split. * congruence. * congruence.
     + reflexivity.
 Qed.
 
@@ -326,7 +329,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * apply T_Unit.
-      * cbv. congruence.
+      * cbv. { split. - congruence. - congruence. }
       * apply T_Peer. simpl. congruence.
 Qed.
 
@@ -351,7 +354,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * apply T_Var. left. reflexivity.
-      * cbv. congruence.
+      * cbv. { split. - congruence. - congruence. }
       * apply T_Peer. simpl. congruence.
 Qed.
 

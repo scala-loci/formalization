@@ -119,7 +119,7 @@ Inductive t : Type :=
   | var    : t -> t
   | now    : t -> t
   | set    : t -> t -> t
-  | peerApp  : p -> t
+  | peerApp  : (ListSet.set p) -> t
   | reactApp : r -> t
   | tnat     : nat -> t.
 
@@ -152,7 +152,7 @@ Fixpoint beq_t (a b: t): bool :=
   | (var at1, var bt1)            => beq_t at1 bt1
   | (now at1, now bt1)            => beq_t at1 bt1
   | (set at1 at2, set bt1 bt2)    => (beq_t at1 bt1) && (beq_t at2 bt2)
-  | (peerApp ap, peerApp bp)      => if peer_instance_dec ap bp then true else false
+  | (peerApp ap, peerApp bp)      => (Nat.eqb (List.length ap) (List.length bp)) && (Nat.eqb (List.length ap) (List.length (ListSet.set_union peer_instance_dec ap bp)))
   | (reactApp ar, reactApp br)    => if reactive_dec ar br then true else false
   | (tnat an, tnat bn)            => Nat.eqb an bn
   | _                             => false
@@ -303,7 +303,7 @@ Definition peer_instances_add
   (instance: p) (instances: ListSet.set p): ListSet.set p :=
   ListSet.set_add peer_instance_dec instance instances.
 
-Definition single_peer_instance p := peer_instances_add p NoInstances.
+Notation "'Instance' p" := (peer_instances_add (PeerInstance p) NoInstances) (at level 50).
 
 Notation "'Instances' [ ]" := NoInstances (at level 50).
 
@@ -325,11 +325,6 @@ Definition peer_instances_all program: ListSet.set p :=
 Definition peer_instances_of_type program P: ListSet.set p :=
   match program with
     Program _ instances => typed_peer_instances_of_type instances P
-  end.
-
-Definition peer_instance_type program p: option P :=
-  match program with
-    Program _ instances => typed_peer_instances_type instances p
   end.
 
 Definition peers_tied program P0 P1: Prop := (peer_ties program) (P0, P1) <> None.

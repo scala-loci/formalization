@@ -121,20 +121,20 @@ Proof. reflexivity. Qed.
 
 Example testSubst_asLocalFrom_1:
   [Id "x" :=_t some unit]
-  asLocalFrom (none Unit) (Option Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalFrom (none Unit) (Option Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalFrom (none Unit) (Option Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalFrom (none Unit) (Option Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalFrom_2:
   [Id "x" :=_t unit]
-  asLocalFrom (idApp (Id "y")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalFrom (idApp (Id "y")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalFrom (idApp (Id "y")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalFrom (idApp (Id "y")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalFrom_3:
   [Id "x" :=_t unit]
-  asLocalFrom (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalFrom (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalFrom (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalFrom (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 
@@ -165,32 +165,32 @@ Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_1:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_2:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_3:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "x")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (some unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "x")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (some unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_4:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_5:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)) =
+  asLocalInFrom (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (Instance 0)).
 Proof. reflexivity. Qed.
 
 
@@ -282,7 +282,7 @@ Example testSubst_set_5:
 Proof. reflexivity. Qed.
 
 
-Example testSubst_peerApp_1: [Id "x" :=_t some unit] peerApp (PeerInstance 0) = peerApp (PeerInstance 0).
+Example testSubst_peerApp_1: [Id "x" :=_t some unit] peerApp (Instance 0) = peerApp (Instance 0).
 Proof. reflexivity. Qed.
 
 
@@ -390,22 +390,22 @@ Proof. apply E_Remote, E_App, v_some, v_unit. Qed.
 
 Example testLocalStep_EAsLocalFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0
+  asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0
   == testPeerInsts1 ==> unit; testReactSys_0.
 Proof. apply E_AsLocalFrom, v_unit. Qed.
 
 
 Example testLocalStep_ECompFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0
-  == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0.
+  asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0
+  == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0.
 Proof. apply E_CompFrom, v_unit. Qed.
 
 
 Example testLocalStep_ERemoteFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalFrom (app (lambda (Id "x") (Option Unit) (unit)) (some unit)) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0
-  == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0.
+  asLocalFrom (app (lambda (Id "x") (Option Unit) (unit)) (some unit)) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0
+  == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_0.
 Proof. apply E_RemoteFrom, E_App, v_some, v_unit. Qed.
 
 

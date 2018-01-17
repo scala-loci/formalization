@@ -95,9 +95,9 @@ Inductive typing_t : program -> reactiveEnv -> placeEnv -> varEnv -> P -> t -> T
 
   (* rules for remote access *)
 
-  | T_Peer: forall program Psi Delta Gamma P0 P1 p,
-      peer_instance_type program p = Some P1 ->
-      program :: Psi; Delta; Gamma; P0 |- peerApp p : Remote P1
+  | T_Peer: forall program Psi Delta Gamma P0 P1 theta,
+      List.incl theta (peer_instances_of_type program P1) ->
+      program :: Psi; Delta; Gamma; P0 |- peerApp theta : Remote P1
 
   | T_AsLocal: forall program Psi Delta Gamma P0 P1 t T0 T1,
       transmittable_type T1 ->

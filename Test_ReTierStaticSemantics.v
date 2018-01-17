@@ -116,8 +116,8 @@ Proof. apply T_None. Qed.
 
 
 Example test_hasType_TPeer_1:
-  (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0" |- peerApp (PeerInstance 0) : Remote (Peer "p0").
-Proof. apply T_Peer. reflexivity. Qed.
+  (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0" |- peerApp (Instance 0) : Remote (Peer "p0").
+Proof. apply T_Peer. simpl. congruence. Qed.
 
 
 Example test_hasType_TAsLocal_single_1:
@@ -177,7 +177,7 @@ Example test_hasType_TAsLocalFrom_single_1:
   testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalFrom unit (Unit on (Peer "ps")) (peerApp (PeerInstance 2)) : Unit.
+    |- asLocalFrom unit (Unit on (Peer "ps")) (peerApp (Instance 2)) : Unit.
 Proof.
   split.
   - reflexivity.
@@ -187,7 +187,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * cbv. congruence.
-      * apply T_Peer. reflexivity.
+      * apply T_Peer. simpl. congruence.
 Qed.
 
 
@@ -197,7 +197,7 @@ Example test_hasType_TAsLocalFrom_optional_1:
   testTies1 (Peer "p0", Peer "po") = Optional /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalFrom unit (Unit on (Peer "po")) (peerApp (PeerInstance 3)) : Unit.
+    |- asLocalFrom unit (Unit on (Peer "po")) (peerApp (Instance 3)) : Unit.
 Proof.
   split.
   - reflexivity.
@@ -207,7 +207,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * cbv. congruence.
-      * apply T_Peer. reflexivity.
+      * apply T_Peer. simpl. congruence.
 Qed.
 
 
@@ -217,7 +217,7 @@ Example test_hasType_TAsLocalFrom_multiple_1:
   testTies1 (Peer "p0", Peer "pm") = Multiple /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalFrom unit (Unit on (Peer "pm")) (peerApp (PeerInstance 4)) : Unit.
+    |- asLocalFrom unit (Unit on (Peer "pm")) (peerApp (Instance 4)) : Unit.
 Proof.
   split.
   - reflexivity.
@@ -227,7 +227,7 @@ Proof.
       * apply U_Unit.
       * apply T_Unit.
       * cbv. congruence.
-      * apply T_Peer. reflexivity.
+      * apply T_Peer. simpl. congruence.
 Qed.
 
 
@@ -314,7 +314,7 @@ Example test_hasType_TCompFrom_single_1:
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) unit (*:*) (Unit on (Peer "ps"))
-                     (*from*) (peerApp (PeerInstance 2))
+                     (*from*) (peerApp (Instance 2))
     : Unit.
 Proof.
   split.
@@ -327,7 +327,7 @@ Proof.
       * apply T_Unit.
       * apply T_Unit.
       * cbv. congruence.
-      * apply T_Peer. reflexivity.
+      * apply T_Peer. simpl. congruence.
 Qed.
 
 
@@ -339,7 +339,7 @@ Example test_hasType_TCompFrom_single_2:
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
     |- asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x"))
                      (*:*) (Unit on (Peer "ps"))
-                     (*from*) (peerApp (PeerInstance 2))
+                     (*from*) (peerApp (Instance 2))
     : Unit.
 Proof.
   split.
@@ -352,7 +352,7 @@ Proof.
       * apply T_Unit.
       * apply T_Var. left. reflexivity.
       * cbv. congruence.
-      * apply T_Peer. reflexivity.
+      * apply T_Peer. simpl. congruence.
 Qed.
 
 

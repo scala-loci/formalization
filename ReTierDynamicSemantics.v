@@ -265,20 +265,20 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         program :: theta : P0 |> asLocal t (*:*) (T on P1); rho
         == theta' ==> asLocal t' (*:*) (T on P1); rho'
 
-  | E_AsLocalFrom: forall program theta P0 P1 v p T rho,
+  | E_AsLocalFrom: forall program theta theta' P0 P1 v T rho,
       value v ->
-        program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) (peerApp p); rho
+        program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) (peerApp theta'); rho
         == theta ==> v; rho
 
-  | E_CompFrom: forall program theta P0 P1 x v p t T0 T1 rho,
+  | E_CompFrom: forall program theta theta' P0 P1 x v t T0 T1 rho,
       value v ->
-        program :: theta : P0 |> asLocalInFrom x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1) (*from*) (peerApp p); rho
-        == single_peer_instance p ==> asLocalFrom ([x :=_t v] t) (*:*) (T1 on P1) (*from*) (peerApp p); rho
+        program :: theta : P0 |> asLocalInFrom x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
+        == theta' ==> asLocalFrom ([x :=_t v] t) (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
 
-  | E_RemoteFrom: forall program theta theta' P0 P1 t t' p T rho rho',
-      program :: single_peer_instance p : P1 |> t; rho == theta' ==> t'; rho' ->
-        program :: theta : P0 |> asLocalFrom t (*:*) (T on P1) (*from*) (peerApp p); rho
-        == theta' ==> asLocalFrom t' (*:*) (T on P1) (*from*) (peerApp p); rho'
+  | E_RemoteFrom: forall program theta theta' theta'' P0 P1 t t' T rho rho',
+      program :: theta'' : P1 |> t; rho == theta' ==> t'; rho' ->
+        program :: theta : P0 |> asLocalFrom t (*:*) (T on P1) (*from*) (peerApp theta''); rho
+        == theta' ==> asLocalFrom t' (*:*) (T on P1) (*from*) (peerApp theta''); rho'
 
   (* reactive rules *)
 

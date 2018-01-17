@@ -17,7 +17,7 @@ Require Import ReTierSyntax.
 
 
 Definition testPsi0: reactiveEnv := Datatypes.nil.
-Definition testPsi1: reactiveEnv := Datatypes.cons Unit Datatypes.nil.
+Definition testPsi1: reactiveEnv := Datatypes.cons (Unit on Peer "_") Datatypes.nil.
 Definition testGamma1: varEnv := idUpdate (Id "x") Tnat (idUpdate (Id "y") Unit idEmpty).
 Definition testDelta1: placeEnv := idUpdate (Id "x") (Unit on (Peer "px")) idEmpty.
 Definition testTies1 := Ties ["p0" -*-> "pm", "p0" -?-> "po", "p0" -1-> "ps", "p0" -0-> "pn"].
@@ -358,7 +358,7 @@ Qed.
 
 Example test_hasType_TReactive_1:
   (* ensure test setup is correct ... *)
-  reactive_type (Reactive 0) testPsi1 = Some Unit /\
+  reactive_type (Reactive 0) testPsi1 = Some (Unit on Peer "_") /\
   (* actual test ... *)
   (Program NoTies NoTypedInstances) :: testPsi1; emptyPlaceEnv; emptyVarEnv; Peer "_" |- reactApp (Reactive 0) : Unit.
 Proof.

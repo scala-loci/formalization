@@ -48,13 +48,13 @@ Definition phi (ties: ties) (p0 p1: P) (type: T): option T :=
 (* --------------------------------------------------------------------- *)
 
 
-Definition reactiveEnv := list T.
+Definition reactiveEnv := list S.
 
-Definition reactive_type (r: r) (env: reactiveEnv): option T :=
+Definition reactive_type (r: r) (env: reactiveEnv): option S :=
   match r with Reactive n => List.nth_error env n end.
 
-Definition reactive_type_add (T: T) (env: reactiveEnv): r * reactiveEnv :=
-  (Reactive (length env), List.app env (Datatypes.cons T Datatypes.nil)).
+Definition reactive_type_add (S: S) (env: reactiveEnv): r * reactiveEnv :=
+  (Reactive (length env), List.app env (Datatypes.cons S Datatypes.nil)).
 
 
 
@@ -134,7 +134,7 @@ Inductive typing_t : program -> reactiveEnv -> placeEnv -> varEnv -> P -> t -> T
   (* rules for reactives *)
 
   | T_Reactive: forall program Psi Delta Gamma P r T,
-      reactive_type r Psi = Some T -> 
+      reactive_type r Psi = Some (T on P) ->
       program :: Psi; Delta; Gamma; P |- reactApp r : T
 
   | T_Signal: forall program Psi Delta Gamma P t T,

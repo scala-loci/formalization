@@ -24,9 +24,10 @@ induction v; intros; inversion H_value; inversion H_typing; subst.
   + apply IHv1; assumption.
   + apply IHv2; assumption.
 - apply T_Peer. assumption.
-- apply T_Reactive. assumption.
+- apply T_Reactive.
+  admit.
 - apply T_Nat.
-Qed.
+Admitted.
 
 
 Lemma gamma_typing : forall (Gamma: varEnv) (x: id),

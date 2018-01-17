@@ -12,7 +12,7 @@ Definition reactive_system_well_typed program Psi Delta Gamma rho :=
   (forall r, reactive_index r < reactive_domain rho ->
     (exists t T T' P,
       reactive_system_lookup r rho = Some t /\
-      reactive_type r Psi = Some T /\
+      reactive_type r Psi = Some (T on P) /\
       (T = Var T' \/ T = Signal T') /\
       program :: Psi; Delta; Gamma; P |- t : T')).
 
@@ -235,7 +235,7 @@ Qed.
 Lemma reactive_typing_update : forall program Psi Delta Gamma rho r P t T,
   program :: Psi; Delta; Gamma |- rho ->
   program :: Psi; Delta; Gamma; P |- t : T ->
-  reactive_type r Psi = Some (Var T) ->
+  reactive_type r Psi = Some (Var T on P) ->
   program :: Psi; Delta; Gamma |- reactive_system_update r t rho.
 Proof.
 intros until T.
@@ -253,7 +253,7 @@ split.
   destruct H.
   + subst.
     apply H_well_typed with (Reactive n) in H_domain as H.
-    destruct H as [ t0 H ], H as [ T0 H ], H as [ T' H ], H as [ P0 H ],
+    destruct H as [ t0 H ], H as [ T0 H ], H as [ T' H ], H as [ P' H ],
       H as [ H_lookup H ], H as [ H_type H ], H as [ H_reactive H ].
     rewrite H_reactive_type in H_type.
     inversion H_type.
@@ -262,7 +262,7 @@ split.
     inversion H_reactive.
     subst.
     rewrite reactive_system_lookup_update_eq; try assumption.
-    exists t, (Var T'), T', P.
+    exists t, (Var T'), T', P'.
     repeat split; try reflexivity || assumption.
     left. reflexivity.
   + rewrite reactive_system_lookup_update_neq; try assumption.
@@ -276,9 +276,9 @@ Lemma reactive_typing_add : forall program Psi Delta Gamma rho P t T T',
   program :: Psi; Delta; Gamma; P |- t : T ->
   T' = Var T \/ T' = Signal T ->
   (exists Psi' rho' r,
-   reactive_type_add T' Psi = (r, Psi') /\
+   reactive_type_add (T' on P) Psi = (r, Psi') /\
    reactive_system_add t rho = (r, rho') /\
-   reactive_type r Psi' = Some T' /\
+   reactive_type r Psi' = Some (T' on P) /\
    Psi' extends Psi /\
    program :: Psi'; Delta; Gamma |- rho').
 Proof.
@@ -291,7 +291,7 @@ destruct H_rho as [ r_rho H_rho ], H_rho as [ rho' H_rho ],
   H_rho as [ H_rho_add H_rho ], H_rho as [ H_rho_reactive H_rho ],
   H_rho as [ H_rho_domain H_rho ], H_rho as [ H_rho_lookup H_rho ].
 pose proof reactive_env_add_properties as H_Psi.
-specialize H_Psi with Psi T'.
+specialize H_Psi with Psi (T' on P).
 destruct H_Psi as [ r_Psi H_Psi ], H_Psi as [ Psi' H_Psi ],
   H_Psi as [ H_Psi_add H_Psi ], H_Psi as [ H_Psi_extends H_Psi ],
   H_Psi as [ H_Psi_reactive H_Psi ], H_Psi as [ H_Psi_domain H_Psi ],

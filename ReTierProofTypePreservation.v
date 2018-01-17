@@ -241,7 +241,7 @@ Admitted.
 *)
 
 Lemma preservation_nonReactive: forall t t' T theta theta' program Psi Delta Gamma P rho rho',
-  program :: Psi; Delta; Gamma; P |- t : T -> 
+  program :: Psi; Delta; Gamma; P |- t : T ->
   program :: theta : P |> t; rho == theta' ==> t'; rho' ->
   program :: Psi; Delta; Gamma; P |- t' : T.
 Proof.
@@ -263,8 +263,8 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
                   | tc IHtc tl IHtl     (* cons   : t -> t -> t *)
                   | targ IHtarg S    (* asLocal       : t -> S -> t  *)
                   | targ IHtarg S tfrom IHtfrom    (* asLocalFrom   : t -> S -> t -> t *)
-                  | x tassign IHtassign tin IHtin S (* asLocalIn     : id -> t -> t -> S -> t *)
-                  | targ tassign IHtassign tin IHtin S tfrom IHtfrom (* asLocalInFrom : id -> t -> t -> S -> t -> t *)
+                  | x T tassign IHtassign tin IHtin S (* asLocalIn     : id -> T -> t -> t -> S -> t *)
+                  | targ T tassign IHtassign tin IHtin S tfrom IHtfrom (* asLocalInFrom : id -> T -> t -> t -> S -> t -> t *)
                   | ts IHts        (* signal : t -> t *)
                   | tv IHtv        (* var    : t -> t *)
                   | tn IHtn        (* now    : t -> t *)
@@ -353,7 +353,7 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
     
     
 - (* asLocalIn *)
-  intros theta' theta varEnv t' T P H_stat H_dyn.
+  intros theta' theta varEnv t' T' P H_stat H_dyn.
   inversion H_stat.
   subst.
   inversion H_dyn; subst.

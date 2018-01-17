@@ -113,17 +113,15 @@ Inductive t : Type :=
   | cons   : t -> t -> t
   | asLocal       : t -> S -> t 
   | asLocalFrom   : t -> S -> t -> t
-  | asLocalIn     : id -> t -> t -> S -> t
-  | asLocalInFrom : id -> t -> t -> S -> t -> t
+  | asLocalIn     : id -> T -> t -> t -> S -> t
+  | asLocalInFrom : id -> T -> t -> t -> S -> t -> t
   | signal : t -> t
   | var    : t -> t
   | now    : t -> t
   | set    : t -> t -> t
-  | peerApp          : p -> t
-  | reactApp      : r -> t
-  
-  (* Added to make testing easier. *)
-  | tnat   : nat -> t.
+  | peerApp  : p -> t
+  | reactApp : r -> t
+  | tnat     : nat -> t.
 
 (*
 Notation "\ x ; T , t" := (lambda (Id x) T t) (at level 80, left associativity).
@@ -146,10 +144,10 @@ Fixpoint beq_t (a b: t): bool :=
       => (beq_t at1 bt1) && (beq_S aS bS)
   | (asLocalFrom at1 aS at2, asLocalFrom bt1 bS bt2)
       => (beq_t at1 bt1) && (beq_S aS bS) && (beq_t at2 bt2)
-  | (asLocalIn ax at1 at2 aS, asLocalIn bx bt1 bt2 bS)
-      => (if id_dec ax bx then true else false) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS)
-  | (asLocalInFrom ax at1 at2 aS at3, asLocalInFrom bx bt1 bt2 bS bt3)
-      => (if id_dec ax bx then true else false) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS) && (beq_t at3 bt3)
+  | (asLocalIn ax aT at1 at2 aS, asLocalIn bx bT bt1 bt2 bS)
+      => (if id_dec ax bx then true else false) && (beq_T aT bT) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS)
+  | (asLocalInFrom ax aT at1 at2 aS at3, asLocalInFrom bx bT bt1 bt2 bS bt3)
+      => (if id_dec ax bx then true else false) && (beq_T aT bT) && (beq_t at1 at2) && (beq_t at2 bt2) && (beq_S aS bS) && (beq_t at3 bt3)
   | (signal at1, signal bt1)      => beq_t at1 bt1
   | (var at1, var bt1)            => beq_t at1 bt1
   | (now at1, now bt1)            => beq_t at1 bt1
@@ -354,11 +352,11 @@ Fixpoint appears_free_in_t_locality x t locality : Prop :=
   | cons t0 t1 => appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 locality
   | asLocal t type => appears_free_in_t_locality x t LocalOrRemoteVar
   | asLocalFrom t0 type t1 => appears_free_in_t_locality x t0 LocalOrRemoteVar \/ appears_free_in_t_locality x t1 locality
-  | asLocalIn x' t0 t1 type =>
+  | asLocalIn x' type0 t0 t1 type1 =>
     if id_dec x x'
       then appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 RemoteVar
       else appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 LocalOrRemoteVar
-  | asLocalInFrom x' t0 t1 type t2 =>
+  | asLocalInFrom x' type0 t0 t1 type1 t2 =>
     if id_dec x x'
       then appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 RemoteVar \/ appears_free_in_t_locality x t2 locality
       else appears_free_in_t_locality x t0 locality \/ appears_free_in_t_locality x t1 LocalOrRemoteVar \/ appears_free_in_t_locality x t2 locality

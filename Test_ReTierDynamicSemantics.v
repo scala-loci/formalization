@@ -140,57 +140,57 @@ Proof. reflexivity. Qed.
 
 Example testSubst_asLocalIn_1:
   [Id "x" :=_t some unit]
-  asLocalIn (Id "z") (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) =
-  asLocalIn (Id "z") (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")).
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) =
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalIn_2:
   [Id "x" :=_t some unit]
-  asLocalIn (Id "z") (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) =
-  asLocalIn (Id "z") (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")).
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) =
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalIn_3:
   [Id "x" :=_t some unit]
-  asLocalIn (Id "z") (*=*) (none Unit) (*in*) (idApp (Id "y")) (Unit on (Peer "_")) =
-  asLocalIn (Id "z") (*=*) (none Unit) (*in*) (idApp (Id "y")) (Unit on (Peer "_")).
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "y")) (Unit on (Peer "_")) =
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "y")) (Unit on (Peer "_")).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalIn_4:
   [Id "x" :=_t some unit]
-  asLocalIn (Id "z") (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) =
-  asLocalIn (Id "z") (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")).
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) =
+  asLocalIn (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")).
 Proof. reflexivity. Qed.
 
 
 Example testSubst_asLocalInFrom_1:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_2:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "y")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_3:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*=*) (idApp (Id "x")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*=*) (some unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (idApp (Id "x")) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (some unit) (*in*) (none Unit) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_4:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "x") (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "x") (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
+  asLocalInFrom (Id "x") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
 Proof. reflexivity. Qed.
 
 Example testSubst_asLocalInFrom_5:
   [Id "x" :=_t some unit]
-  asLocalInFrom (Id "z") (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
-  asLocalInFrom (Id "z") (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
+  asLocalInFrom (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)) =
+  asLocalInFrom (Id "z") (*:*) (Option Unit) (*=*) (none Unit) (*in*) (idApp (Id "x")) (Unit on (Peer "_")) (*from*) (peerApp (PeerInstance 0)).
 Proof. reflexivity. Qed.
 
 
@@ -376,7 +376,7 @@ Qed.
 
 Example testLocalStep_EComp_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalIn (Id "x") (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps")); testReactSys_0
+  asLocalIn (Id "x") (*:*) Unit (*=*) unit (*in*)  (idApp (Id "x")) (*:*) (Unit on (Peer "ps")); testReactSys_0
   == Instances [ 2 ] ==> asLocal unit (*:*) (Unit on (Peer "ps")); testReactSys_0.
 Proof. apply E_Comp, v_unit. Qed.
 
@@ -397,7 +397,7 @@ Proof. apply E_AsLocalFrom, v_unit. Qed.
 
 Example testLocalStep_ECompFrom_1:
   (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0
+  asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x")) (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0
   == Instances [ 2 ] ==> asLocalFrom unit (*:*) (Unit on (Peer "ps")) (*from*) (peerApp (PeerInstance 2)); testReactSys_0.
 Proof. apply E_CompFrom, v_unit. Qed.
 

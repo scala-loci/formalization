@@ -236,7 +236,7 @@ Example test_hasType_TComp_single_1:
   testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalIn (Id "x") unit unit (Unit on (Peer "ps")) : Unit.
+    |- asLocalIn (Id "x") Unit unit unit (Unit on (Peer "ps")) : Unit.
 Proof.
   split.
   - reflexivity.
@@ -255,7 +255,7 @@ Example test_hasType_TComp_optional_1:
   testTies1 (Peer "p0", Peer "po") = Optional /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalIn (Id "x") unit unit (Unit on (Peer "po")) : Option Unit.
+    |- asLocalIn (Id "x") Unit unit unit (Unit on (Peer "po")) : Option Unit.
 Proof.
   split.
   - reflexivity.
@@ -274,7 +274,7 @@ Example test_hasType_TComp_multiple_1:
   testTies1 (Peer "p0", Peer "pm") = Multiple /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalIn (Id "x") unit unit (Unit on (Peer "pm")) : List Unit.
+    |- asLocalIn (Id "x") Unit unit unit (Unit on (Peer "pm")) : List Unit.
 Proof.
   split.
   - reflexivity.
@@ -293,7 +293,7 @@ Example test_hasType_TComp_single_2:
   testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 NoTypedInstances) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalIn (Id "x") unit (idApp (Id "x")) (Unit on (Peer "ps")) : Unit.
+    |- asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "ps")) : Unit.
 Proof.
   split.
   - reflexivity.
@@ -313,7 +313,7 @@ Example test_hasType_TCompFrom_single_1:
   testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalInFrom (Id "x") (*=*) unit (*in*) unit (*:*) (Unit on (Peer "ps"))
+    |- asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) unit (*:*) (Unit on (Peer "ps"))
                      (*from*) (peerApp (PeerInstance 2))
     : Unit.
 Proof.
@@ -337,7 +337,7 @@ Example test_hasType_TCompFrom_single_2:
   testTies1 (Peer "p0", Peer "ps") = Single /\
   (* actual test ... *)
   (Program testTies1 testPeerTyping1) :: testPsi0; emptyPlaceEnv; emptyVarEnv; Peer "p0"
-    |- asLocalInFrom (Id "x") (*=*) unit (*in*) (idApp (Id "x"))
+    |- asLocalInFrom (Id "x") (*:*) Unit (*=*) unit (*in*) (idApp (Id "x"))
                      (*:*) (Unit on (Peer "ps"))
                      (*from*) (peerApp (PeerInstance 2))
     : Unit.

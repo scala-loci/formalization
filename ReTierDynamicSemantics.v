@@ -59,8 +59,8 @@ Fixpoint subst_t x value term: t :=
   | cons term0 term1 => cons (subst_t x value term0) (subst_t x value term1)
   | asLocal term type => asLocal term type
   | asLocalFrom term0 type term1 => asLocalFrom term0 type (subst_t x value term1)
-  | asLocalIn x' term0 term1 type => asLocalIn x' (subst_t x value term0) term1 type
-  | asLocalInFrom x' term0 term1 type term2 => asLocalInFrom x' (subst_t x value term0) term1 type (subst_t x value term2)
+  | asLocalIn x' type0 term0 term1 type1 => asLocalIn x' type0 (subst_t x value term0) term1 type1
+  | asLocalInFrom x' type0 term0 term1 type1 term2 => asLocalInFrom x' type0 (subst_t x value term0) term1 type1 (subst_t x value term2)
   | signal term => signal (subst_t x value term)
   | var term => var (subst_t x value term)
   | now term => now (subst_t x value term)
@@ -90,14 +90,14 @@ Fixpoint subst_s_locality x value term locality: t :=
   | cons term0 term1 => cons (subst_s_locality x value term0 locality) (subst_s_locality x value term1 locality)
   | asLocal term type => asLocal (subst_s_locality x value term LocalOrRemoteVar) type
   | asLocalFrom term0 type term1 => asLocalFrom (subst_s_locality x value term0 LocalOrRemoteVar) type (subst_s_locality x value term1 locality)
-  | asLocalIn x' term0 term1 type =>
+  | asLocalIn x' type0 term0 term1 type1 =>
     if id_dec x x'
-      then asLocalIn x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type
-      else asLocalIn x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type
-  | asLocalInFrom x' term0 term1 type term2 =>
+      then asLocalIn x' type0 (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type1
+      else asLocalIn x' type0 (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type1
+  | asLocalInFrom x' type0 term0 term1 type1 term2 =>
     if id_dec x x'
-      then asLocalInFrom x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type (subst_s_locality x value term2 locality)
-      else asLocalInFrom x' (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type (subst_s_locality x value term2 locality)
+      then asLocalInFrom x' type0 (subst_s_locality x value term0 locality) (subst_s_locality x value term1 RemoteVar) type1 (subst_s_locality x value term2 locality)
+      else asLocalInFrom x' type0 (subst_s_locality x value term0 locality) (subst_s_locality x value term1 LocalOrRemoteVar) type1 (subst_s_locality x value term2 locality)
   | signal term => signal (subst_s_locality x value term locality)
   | var term => var (subst_s_locality x value term locality)
   | now term => now (subst_s_locality x value term locality)
@@ -207,21 +207,21 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         program :: theta : P |> asLocalFrom t0 (*:*) S (*from*) t1; rho
         == theta' ==> asLocalFrom t0 (*:*) S (*from*) t1'; rho'
 
-  | EC_Comp: forall program theta theta' P S x t0 t0' t1 rho rho',
+  | EC_Comp: forall program theta theta' P T S x t0 t0' t1 rho rho',
       program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
-        program :: theta : P |> asLocalIn x (*=*) t0 (*in*) t1 (*:*) S; rho
-        == theta' ==> asLocalIn x (*=*) t0' (*in*) t1 (*:*) S; rho'
+        program :: theta : P |> asLocalIn x (*:*) T (*=*) t0 (*in*) t1 (*:*) S; rho
+        == theta' ==> asLocalIn x (*:*) T (*=*) t0' (*in*) t1 (*:*) S; rho'
 
-  | EC_CompFrom_Right: forall program theta theta' P S x t0 t1 t2 t2' rho rho',
+  | EC_CompFrom_Right: forall program theta theta' P T S x t0 t1 t2 t2' rho rho',
       program :: theta : P |> t2; rho == theta' ==> t2'; rho' ->
-        program :: theta : P |> asLocalInFrom x (*=*) t0 (*in*) t1 (*:*) S (*from*) t2; rho
-        == theta' ==> asLocalInFrom x (*=*) t0 (*in*) t1 (*:*) S (*from*) t2'; rho'
+        program :: theta : P |> asLocalInFrom x (*:*) T (*=*) t0 (*in*) t1 (*:*) S (*from*) t2; rho
+        == theta' ==> asLocalInFrom x (*:*) T (*=*) t0 (*in*) t1 (*:*) S (*from*) t2'; rho'
 
-  | EC_CompFrom_Left: forall program theta theta' P S x v t0 t0' t1 rho rho',
+  | EC_CompFrom_Left: forall program theta theta' P T S x v t0 t0' t1 rho rho',
       value v ->
       program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
-        program :: theta : P |> asLocalInFrom x (*=*) t0 (*in*) t1 (*:*) S (*from*) v; rho
-        == theta' ==> asLocalInFrom x (*=*) t0' (*in*) t1 (*:*) S (*from*) v; rho'
+        program :: theta : P |> asLocalInFrom x (*:*) T (*=*) t0 (*in*) t1 (*:*) S (*from*) v; rho
+        == theta' ==> asLocalInFrom x (*:*) T (*=*) t0' (*in*) t1 (*:*) S (*from*) v; rho'
 
   | EC_Var: forall program theta theta' P t t' rho rho',
       program :: theta : P |> t; rho == theta' ==> t'; rho' ->
@@ -255,10 +255,10 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         program :: theta : P0 |> asLocal v (*:*) (T on P1); rho
         == theta ==> v'; rho
 
-  | E_Comp: forall program theta P0 P1 x v t T rho,
+  | E_Comp: forall program theta P0 P1 x v t T0 T1 rho,
       value v ->
-        program :: theta : P0 |> asLocalIn x (*=*) v (*in*) t (*:*) (T on P1); rho
-        == peer_instances_of_type program P1 ==> asLocal ([x :=_t v] t) (*:*) (T on P1); rho
+        program :: theta : P0 |> asLocalIn x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1); rho
+        == peer_instances_of_type program P1 ==> asLocal ([x :=_t v] t) (*:*) (T1 on P1); rho
 
   | E_Remote: forall program theta theta' P0 P1 t t' T rho rho',
       program :: peer_instances_of_type program P1 : P1 |> t; rho == theta' ==> t'; rho' ->
@@ -270,10 +270,10 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) (peerApp p); rho
         == theta ==> v; rho
 
-  | E_CompFrom: forall program theta P0 P1 x v p t T rho,
+  | E_CompFrom: forall program theta P0 P1 x v p t T0 T1 rho,
       value v ->
-        program :: theta : P0 |> asLocalInFrom x (*=*) v (*in*) t (*:*) (T on P1) (*from*) (peerApp p); rho
-        == single_peer_instance p ==> asLocalFrom ([x :=_t v] t) (*:*) (T on P1) (*from*) (peerApp p); rho
+        program :: theta : P0 |> asLocalInFrom x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1) (*from*) (peerApp p); rho
+        == single_peer_instance p ==> asLocalFrom ([x :=_t v] t) (*:*) (T1 on P1) (*from*) (peerApp p); rho
 
   | E_RemoteFrom: forall program theta theta' P0 P1 t t' p T rho rho',
       program :: single_peer_instance p : P1 |> t; rho == theta' ==> t'; rho' ->

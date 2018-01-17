@@ -210,13 +210,13 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
 - destruct id_dec.
   + destruct H_free_x as [ H_free_x | H_free_x ].
     * eapply IHt1; eassumption.
-    * eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
+    * eapply IHt2 with (Gamma := (idUpdate i t1 emptyVarEnv)) in H_free_x; try eassumption.
       destruct H_free_x as [ T' H_lookup ], H_lookup as [ P' H_lookup ].
       exists T', P'.
       right. assumption.
   + destruct H_free_x as [ H_free_x | H_free_x ].
     * eapply IHt1; eassumption.
-    * { eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
+    * { eapply IHt2 with (Gamma := (idUpdate i t1 emptyVarEnv)) in H_free_x; try eassumption.
         destruct
             H_free_x as [ T' H_lookup ],
             H_lookup as [ P' H_lookup ],
@@ -235,7 +235,7 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
     * eapply IHt2; eassumption.
   + destruct H_free_x as [ H_free_x | H_free_x ].
     * eapply IHt1; eassumption.
-    * { eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
+    * { eapply IHt2 with (Gamma := (idUpdate i t1 emptyVarEnv)) in H_free_x; try eassumption.
         destruct
             H_free_x as [ T' H_lookup ],
             H_lookup as [ P' H_lookup ],
@@ -252,7 +252,7 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
   * { destruct H_free_x as [ H_free_x | H_free_x ].
       - eapply IHt1; eassumption.
       - destruct H_free_x as [ H_free_x | H_free_x ].
-        + eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
+        + eapply IHt2 with (Gamma := (idUpdate i t1 emptyVarEnv)) in H_free_x; try eassumption.
           destruct H_free_x as [ T' H_lookup ], H_lookup as [ P' H_lookup ].
           exists T', P'.
           right. assumption.
@@ -261,7 +261,7 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
   * { destruct H_free_x as [ H_free_x | H_free_x ].
       - eapply IHt1; eassumption.
       - destruct H_free_x as [ H_free_x | H_free_x ].
-        + eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
+        + eapply IHt2 with (Gamma := (idUpdate i t1 emptyVarEnv)) in H_free_x; try eassumption.
           destruct
               H_free_x as [ T' H_lookup ],
               H_lookup as [ P' H_lookup ],
@@ -285,7 +285,7 @@ induction t; intros; inversion H_typing; subst; split; intros H_free_x; simpl in
   + destruct H_free_x as [ H_free_x | H_free_x ].
     * eapply IHt1; eassumption.
     * { destruct H_free_x as [ H_free_x | H_free_x ].
-        - eapply IHt2 with (Gamma := (idUpdate i T0 emptyVarEnv)) in H_free_x; try eassumption.
+        - eapply IHt2 with (Gamma := (idUpdate i t1 emptyVarEnv)) in H_free_x; try eassumption.
           destruct
               H_free_x as [ T' H_lookup ],
               H_lookup as [ P' H_lookup ],
@@ -453,8 +453,8 @@ induction t; intros; inversion H_typing; subst.
     split; try reflexivity.
     intros.
     apply H_free_x_Delta. simpl. left. assumption.
-- eapply IHt1 in H10.
-  + eapply IHt2 in H12.
+- eapply IHt1 in H12.
+  + eapply IHt2 in H13.
     * eapply T_Comp; eassumption.
     * { intros y H_free_y.
         apply H_free_x_Delta.
@@ -482,9 +482,9 @@ induction t; intros; inversion H_typing; subst.
     apply H_free_x_Gamma.
     simpl.
     destruct id_dec; left; assumption.
-- eapply IHt1 in H12.
-  + eapply IHt2 in H13.
-    * { eapply IHt3 in H15.
+- eapply IHt1 in H13.
+  + eapply IHt2 in H14.
+    * { eapply IHt3 in H16.
         - eapply T_ComFrom; eassumption.
         - intros y H_free_y.
           apply H_free_x_Delta.

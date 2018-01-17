@@ -312,7 +312,7 @@ Inductive evaluation_s : program -> s -> reactive_system -> peer_instances -> s 
   | E_Placed: forall program theta P x t t' s T rho rho',
       program :: peer_instances_of_type program P : P |> t; rho == theta ==> t'; rho' ->
         program :: placed x (T on P) t s; rho
-        == theta ==> placed x (T on P) t' s; rho
+        == theta ==> placed x (T on P) t' s; rho'
 
   | E_Placed_Val: forall program P x v s T rho,
       value v ->

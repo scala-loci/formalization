@@ -186,8 +186,8 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
   + eapply IHt2. right. split; eassumption.
 - apply T_Peer. assumption.
 - apply T_Peer. assumption.
-- apply T_Reactive. assumption.
-- apply T_Reactive. assumption.
+- eapply T_Reactive; eassumption.
+- eapply T_Reactive; eassumption.
 - apply T_Nat.
 - apply T_Nat.
 Qed.
@@ -378,8 +378,8 @@ induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typi
 - eapply T_Set; [ apply IHt1 | apply IHt2 ]; eassumption.
 - apply T_Peer. assumption.
 - apply T_Peer. assumption.
-- apply T_Reactive. assumption.
-- apply T_Reactive. assumption.
+- eapply T_Reactive; eassumption.
+- eapply T_Reactive; eassumption.
 - apply T_Nat.
 - apply T_Nat.
 Qed.

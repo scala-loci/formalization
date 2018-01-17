@@ -133,9 +133,10 @@ Inductive typing_t : program -> reactiveEnv -> placeEnv -> varEnv -> P -> t -> T
 
   (* rules for reactives *)
 
-  | T_Reactive: forall program Psi Delta Gamma P r T,
-      reactive_type r Psi = Some (T on P) ->
-      program :: Psi; Delta; Gamma; P |- reactApp r : T
+  | T_Reactive: forall program Psi Delta Gamma P r T0 T1,
+      reactive_type r Psi = Some (T0 on P) ->
+      T0 = Signal T1 \/ T0 = Var T1 ->
+      program :: Psi; Delta; Gamma; P |- reactApp r : T0
 
   | T_Signal: forall program Psi Delta Gamma P t T,
       program :: Psi; Delta; Gamma; P |- t : T ->

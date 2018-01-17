@@ -208,7 +208,7 @@ induction H_typing.
 - eapply T_AsLocalFrom; try apply IHH_typing1 || apply IHH_typing2; assumption.
 - eapply T_Comp; try apply IHH_typing1 || apply IHH_typing2; assumption.
 - eapply T_ComFrom; try apply IHH_typing1 || apply IHH_typing2 || apply IHH_typing3; assumption.
-- eapply T_Reactive.
+- eapply T_Reactive; try eassumption.
   erewrite reactive_env_extends_type; try eassumption.
   apply reactive_env_type_domain.
   congruence.

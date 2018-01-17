@@ -24,7 +24,7 @@ induction v; intros; inversion H_value; inversion H_typing; subst.
   + apply IHv1; assumption.
   + apply IHv2; assumption.
 - apply T_Peer. assumption.
-- apply T_Reactive.
+- eapply T_Reactive; try eassumption.
   admit.
 - apply T_Nat.
 Admitted.
@@ -541,7 +541,7 @@ induction t; intros; inversion H_typing; subst.
   + intros. apply H_free_x_Delta. simpl. left. assumption.
   + intros. apply H_free_x_Gamma. simpl. left. assumption.
 - apply T_Peer; assumption.
-- apply T_Reactive; assumption.
+- eapply T_Reactive; eassumption.
 - apply T_Nat.
 Qed.
 

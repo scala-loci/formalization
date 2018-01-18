@@ -5,30 +5,30 @@ Require Import ReTierProofContext.
 
 
 Lemma substitution_t_generalized:
-  forall program Psi Delta Gamma P x t T v U,
+  forall program Psi Delta Gamma P x t t' T T',
   (exists P',
    Gamma x = Datatypes.None /\
-   (Delta x = Datatypes.None \/ Delta x = Datatypes.Some (U on P')) /\
+   (Delta x = Datatypes.None \/ Delta x = Datatypes.Some (T' on P')) /\
    program :: Psi; Delta; Gamma; P |- t : T /\
-   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U) \/
-  (program :: Psi; Delta; idUpdate x U Gamma; P |- t : T /\
-   program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U) ->
-  program :: Psi; Delta; Gamma; P |- [x :=_t v] t : T.
+   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- t' : T') \/
+  (program :: Psi; Delta; idUpdate x T' Gamma; P |- t : T /\
+   program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- t' : T') ->
+  program :: Psi; Delta; Gamma; P |- [x :=_t t'] t : T.
 Proof.
-intros until U.
+intros until T'.
 intros H_typing.
 generalize dependent Gamma.
 generalize dependent T.
-generalize dependent U.
+generalize dependent T'.
 generalize dependent P.
 induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
    [ destruct
        H_typing as [ P' H_typing ],
        H_typing as [ H_Gamma H_typing ],
        H_typing as [ H_Delta H_typing ],
-       H_typing as [ H_typing H_typing_v ] |
+       H_typing as [ H_typing H_typing_t' ] |
      destruct
-       H_typing as [ H_typing H_typing_v ] ]); inversion H_typing; subst; simpl.
+       H_typing as [ H_typing H_typing_t' ] ]); inversion H_typing; subst; simpl.
 - destruct id_dec.
   + apply T_Abs.
     eapply context_invariance_t; try reflexivity || eassumption.
@@ -81,7 +81,7 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
           rewrite H1 in H0.
           inversion H0.
           subst.
-          eapply typable_empty_closed_t in H_typing_v as H_closed.
+          eapply typable_empty_closed_t in H_typing_t' as H_closed.
           unfold closed_t in H_closed.
           eapply context_invariance_t; try eassumption; intros x H_free_x.
           + specialize H_closed with x.
@@ -99,7 +99,7 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
     destruct H5.
     * { inversion H.
         subst.
-        eapply typable_empty_closed_t in H_typing_v as H_closed.
+        eapply typable_empty_closed_t in H_typing_t' as H_closed.
         unfold closed_t in H_closed.
         eapply context_invariance_t; try eassumption; intros x H_free_x.
         - specialize H_closed with x.
@@ -111,7 +111,7 @@ induction t; intros; (destruct H_typing as [ H_typing | H_typing ];
     * destruct H.
       congruence.
   + apply T_Var.
-    assert (Gamma i = idUpdate x U Gamma i).
+    assert (Gamma i = idUpdate x T' Gamma i).
     * unfold idUpdate, Maps.p_update, Maps.t_update.
       destruct id_dec; try reflexivity.
       subst.
@@ -194,10 +194,10 @@ Qed.
 
 
 Lemma substitution_t:
-  forall program Psi Delta Gamma P x t T v U,
-  program :: Psi; Delta; idUpdate x U Gamma; P |- t : T ->
-  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U ->
-  program :: Psi; Delta; Gamma; P |- [x :=_t v] t : T.
+  forall program Psi Delta Gamma P x t t' T T',
+  program :: Psi; Delta; idUpdate x T' Gamma; P |- t : T ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- t' : T' ->
+  program :: Psi; Delta; Gamma; P |- [x :=_t t'] t : T.
 Proof.
 intros.
 eapply substitution_t_generalized.
@@ -206,22 +206,21 @@ Qed.
 
 
 Lemma substitution_s_generalized:
-  forall program Psi Delta Gamma P P' x t T v U,
+  forall program Psi Delta Gamma P P' x t t' T T',
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- t' : T' ->
+  program :: Psi; idUpdate x (T' on P') Delta; Gamma; P |- t : T ->
   (Gamma x = Datatypes.None ->
-   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
-   program :: Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
-   program :: Psi; Delta; Gamma; P |- subst_s_locality x v t LocalOrRemoteVar : T) /\
+   program :: Psi; Delta; Gamma; P |- subst_s_locality x t' t LocalOrRemoteVar : T) /\
   (Gamma x <> Datatypes.None ->
-   program :: Psi; emptyPlaceEnv; emptyVarEnv; P' |- v : U ->
-   program :: Psi; idUpdate x (U on P') Delta; Gamma; P |- t : T ->
-   program :: Psi; Delta; Gamma; P |- subst_s_locality x v t RemoteVar : T).
+   program :: Psi; Delta; Gamma; P |- subst_s_locality x t' t RemoteVar : T).
 Proof.
-intros until U.
+intros until T'.
+intros H_typing_t' H_typing.
 generalize dependent Delta.
 generalize dependent Gamma.
 generalize dependent T.
 generalize dependent P.
-induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typing; subst; simpl.
+induction t; intros; split; intros H_Gamma; inversion H_typing; subst; simpl.
 - destruct id_dec.
   + eapply T_Abs, IHt; try eassumption.
     unfold idUpdate, Maps.p_update, Maps.t_update.
@@ -251,7 +250,7 @@ induction t; intros; split; intros H_Gamma H_typing_v H_typing; inversion H_typi
         destruct id_dec; try contradiction.
         inversion H0.
         subst.
-        eapply typable_empty_closed_t in H_typing_v as H_closed.
+        eapply typable_empty_closed_t in H_typing_t' as H_closed.
         unfold closed_t in H_closed.
         eapply context_invariance_t; try eassumption; intros y H_free_y.
         - specialize H_closed with y.
@@ -386,13 +385,13 @@ Qed.
 
 
 Lemma substitution_s:
-  forall program Psi Delta P x s v U,
-  program :: Psi; idUpdate x (U on P) Delta |- s ->
-  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- v : U ->
-  program :: Psi; Delta |- [x :=_s v] s.
+  forall program Psi Delta P x s t T,
+  program :: Psi; idUpdate x (T on P) Delta |- s ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- t : T ->
+  program :: Psi; Delta |- [x :=_s t] s.
 Proof.
 intros.
-generalize dependent U.
+generalize dependent T.
 generalize dependent Delta.
 induction s; intros; inversion H; subst; simpl.
 - destruct id_dec.

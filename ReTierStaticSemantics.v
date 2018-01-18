@@ -35,11 +35,11 @@ Reserved Notation "program :: Psi ; Delta |- s"
 
 (** auxiliary functions for aggegation **)
 
-Definition phi (ties: ties) (p0 p1: P) (type: T): option T :=
-  match ties (p0, p1) with
-  | Multiple => Datatypes.Some (List type)
-  | Optional => Datatypes.Some (Option type)
-  | Single   => Datatypes.Some type
+Definition phi (ties: ties) (P0 P1: P) (T: T) :=
+  match ties (P0, P1) with
+  | Multiple => Datatypes.Some (List T)
+  | Optional => Datatypes.Some (Option T)
+  | Single   => Datatypes.Some T
   | None     => Datatypes.None
   end.
 

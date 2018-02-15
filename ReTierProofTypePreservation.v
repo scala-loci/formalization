@@ -6,6 +6,7 @@ Require Import ReTierProofSubstitution.
 Require Import ReTierProofReactiveSystem.
 Require Import ReTierProofTransmission.
 Require Import ReTierProofAggregation.
+Require Import ReTierProofPeerTies.
 
 
 
@@ -370,7 +371,76 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   
   
 - (* asLocalInFrom *)
-Admitted.
+  intros theta' theta Gamma tin' T0 P H_stat H_dyn H_inst.
+  inversion H_stat. subst.
+  inversion H_dyn. subst.
+  + apply T_ComFrom; auto.  (* TODO: fix spelling mistake *)
+    eapply IHtfrom; eauto.
+  + apply T_ComFrom; auto; subst.
+    eapply IHtassign; eauto.
+  + subst.
+    apply T_AsLocalFrom; auto.
+    eapply substitution_t.
+    * eassumption.
+    * eapply transmission; eauto.
+      apply mutualTiesSymmetric. assumption.
+      
+      
+- (* signal *) 
+  intros theta' theta Gamma ts' T P H_stat H_dyn H_inst.
+  inversion H_stat; subst. inversion H_dyn; subst.
+  (*inversion H_react; subst.*)
+  eapply T_Reactive.
+  + admit.
+    (* TODO: fix rules for static semantics *)
+    (* Goal not true with current rules. 
+    
+       H_dyn:   program :: theta' : P |> signal ts; rho == theta' ==> reactApp r; rho'
+       goal:    reactive_type r Psi = Some (Signal T0 on P)
+       
+       r is new reactive index 
+       => r not contained in Psi
+       => contradiction with goal
+     *)
+  + left. reflexivity.
+
+
+- (* var *)
+  (* TODO: fix rules for static semantics *)
+  (* Same problem as in signal case above => Goal not true with current rules. *)
+  admit.
+
+
+- (* now *)
+  admit.  (* see tmpTypePreservation-v2.v a proof.
+              (alternative lemma with stronger hypothesis.
+           *)
+
+
+- (* set *)
+  intros theta' theta Gamma t' T P H_stat H_dyn H_inst.
+  inversion H_stat; subst.
+  inversion H_dyn; subst.
+  + eapply T_Set; eauto.
+  + eapply T_Set; eauto.
+  + apply T_Unit.
+
+
+- (* peerApp *)
+  intros theta' theta Gamma t' T P H_stat H_dyn H_inst.
+  inversion H_dyn.
+
+
+- (* reactApp *)
+  intros theta' theta Gamma t' T P H_stat H_dyn H_inst.
+  inversion H_dyn.
+
+
+- (* tnat *)
+  intros theta' theta Gamma t' T P H_stat H_dyn H_inst.
+  inversion H_dyn.
+
+Qed.
 
 
 

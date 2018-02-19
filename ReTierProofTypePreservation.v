@@ -243,6 +243,110 @@ Proof.
 Admitted.
 *)
 
+
+Theorem preservation_t: forall t t' T theta theta' program Psi P rho rho',
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- t : T ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv |- rho ->
+  List.incl theta (peer_instances_of_type program P) ->
+  program :: theta : P |> t; rho == theta' ==> t'; rho' ->
+  exists Psi',
+    Psi' extends Psi /\
+    program :: Psi'; emptyPlaceEnv; emptyVarEnv; P |- t' : T /\
+    program :: Psi'; emptyPlaceEnv; emptyVarEnv |- rho'.
+Proof.
+intros until rho'.
+intros H_typing H_reactive_typing H_instances H_eval.
+remember emptyPlaceEnv as Delta.
+remember emptyVarEnv as Gamma.
+generalize dependent theta.
+generalize dependent t'.
+induction H_typing; intros; subst.
+- inversion H_eval.
+- inversion H_eval; subst.
+  + apply IHH_typing1 in H8; try assumption || reflexivity.
+    destruct H8 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_App; try eassumption.
+    eapply reactive_typing_weakening_t; eassumption.
+  + apply IHH_typing2 in H9; try assumption || reflexivity.
+    destruct H9 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_App; try eassumption.
+    eapply reactive_typing_weakening_t; eassumption.
+  + inversion H_typing1.
+    subst.
+    exists Psi.
+    split.
+    * apply reactive_typing_extends_refl.
+    * split; try assumption.
+      eapply substitution_t; eassumption.
+- inversion H_eval.
+- inversion H_eval; subst.
+  + apply IHH_typing1 in H8; try assumption || reflexivity.
+    destruct H8 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_Cons; try eassumption.
+    eapply reactive_typing_weakening_t; eassumption.
+  + apply IHH_typing2 in H9; try assumption || reflexivity.
+    destruct H9 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_Cons; try eassumption.
+    eapply reactive_typing_weakening_t; eassumption.
+- inversion H_eval.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- inversion H_eval.
+  subst.
+  pose proof reactive_typing_add.
+  specialize H with program Psi emptyPlaceEnv emptyVarEnv rho P t T (Signal T).
+  apply H in H_reactive_typing as H0; try assumption || (right; reflexivity).
+  destruct H0 as [ Psi' ], H0 as [ rho0 ], H0 as [ r' ].
+  destruct H0, H1, H2, H4.
+  rewrite H3 in H1.
+  inversion H1.
+  subst.
+  exists Psi'.
+  do 2 (split; try assumption).
+  eapply T_Reactive; try eassumption.
+  left. reflexivity.
+- inversion H_eval; subst.
+  + apply IHH_typing in H3; try assumption || reflexivity.
+    destruct H3 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    apply T_ReactiveVar.
+    assumption.
+  + pose proof reactive_typing_add.
+    specialize H with program Psi emptyPlaceEnv emptyVarEnv rho P t T (Var T).
+    apply H in H_reactive_typing as H1; try assumption || (left; reflexivity).
+    destruct H1 as [ Psi' ], H1 as [ rho0 ], H1 as [ r' ].
+    destruct H1, H2, H3, H5.
+    rewrite H4 in H2.
+    inversion H2.
+    subst.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_Reactive; try eassumption.
+    right. reflexivity.
+Admitted.
+
+
 Lemma preservation_nonReactive: forall t t' T theta theta' program Psi Delta Gamma P rho rho',
   program :: Psi; Delta; Gamma; P |- t : T ->
   program :: theta : P |> t; rho == theta' ==> t'; rho' ->

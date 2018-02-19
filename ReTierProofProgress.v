@@ -1,6 +1,104 @@
 Require Import ReTierSyntax.
-Require Import ReTierDynamicSemantics.
 Require Import ReTierStaticSemantics.
+Require Import ReTierDynamicSemantics.
+Require Import ReTierProofReactiveSystem.
+
+
+(* Definition 1 from the informal specification *)
+Definition config_complete program :=
+  forall P0 P1,
+  ((peer_ties program) (P0, P1) = Single ->
+   length (peer_instances_of_type program P1) = 1) /\
+  ((peer_ties program) (P0, P1) = Optional ->
+   length (peer_instances_of_type program P1) <= 1).
+
+
+Lemma some_phi: forall program t T P0 P1,
+  config_complete program ->
+  peers_tied program P0 P1 ->
+  exists t', Phi (peer_ties program) P0 P1 (peer_instances_of_type program P1) t T = Some t'.
+Proof.
+intros until P1.
+intros H_complete H_tied.
+destruct program as [ ties peers ].
+unfold peers_tied in H_tied.
+destruct H_tied as [ H_P0_tied H_P1_tied ].
+simpl in H_P0_tied.
+clear H_P1_tied.
+unfold config_complete, peer_ties in H_complete.
+destruct (ties (P0, P1)) eqn: H_tie.
+- clear H_complete.
+  induction (peer_instances_of_type (Program ties peers) P1) as [| p peers' IH_peers ].
+  + simpl.
+    rewrite H_tie.
+    esplit.
+    reflexivity.
+  + simpl.
+    rewrite H_tie.
+    destruct IH_peers.
+    simpl in H.
+    rewrite H.
+    esplit.
+    reflexivity.
+- apply H_complete in H_tie as H_peers_length.
+  destruct (peer_instances_of_type (Program ties peers) P1) as [| p peers' ].
+  + simpl.
+    rewrite H_tie.
+    esplit.
+    reflexivity.
+  + destruct peers'.
+    * simpl.
+      rewrite H_tie.
+      esplit.
+      reflexivity.
+    * simpl in H_peers_length.
+      apply le_S_n in H_peers_length.
+      inversion H_peers_length.
+- apply H_complete in H_tie as H_peers_length.
+  destruct (peer_instances_of_type (Program ties peers) P1) as [| p peers' ].
+  + inversion H_peers_length.
+  + destruct peers'.
+    * simpl.
+      rewrite H_tie.
+      esplit.
+      reflexivity.
+    * simpl in H_peers_length.
+      congruence.
+- congruence.
+Qed.
+
+
+Theorem progress_t: forall t T theta program Psi P rho,
+  config_complete program ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv; P |- t : T ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv |- rho ->
+  value t \/ exists t' theta' rho', program :: theta : P |> t; rho == theta' ==> t'; rho'.
+Proof.
+intros until rho.
+intros H_complete H_typing H_reactive_typing.
+remember emptyPlaceEnv as Delta.
+remember emptyVarEnv as Gamma.
+generalize dependent theta.
+induction H_typing; intros; subst.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- admit.
+- edestruct IHH_typing; try assumption || reflexivity.
+  + pose proof some_phi.
+    eapply H3 in H0; try assumption.
+    destruct H0 as [ t' ].
+    right. repeat esplit.
+    eapply E_AsLocal; eassumption.
+  + destruct H2 as [ t' ], H2 as [ theta' ], H2 as [ rho' ].
+    right. repeat esplit.
+    apply E_Remote. eassumption.
+Admitted.
 
 
 Lemma progress: forall program Psi Delta Gamma P theta rho t T,

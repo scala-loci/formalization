@@ -144,17 +144,66 @@ Proof.
   - (* asLocalInFrom *)
     admit.
     
+    
   - (* signal *)
-    admit.
+    intros T H; right.
+    repeat eexists; apply E_Signal. reflexivity.
+    
     
   - (* var *)
-    admit.
-
+    intros T H_type_var; right. (*; repeat eexists.*)
+    inversion H_type_var as [| | | | | | | | | | | | | | |
+                              tmp0 tmp1 tmp2 tmp3 tmp4 tmp5
+                              Tv H_type_tv
+                             | | | ];
+      subst.
+    apply IHtv in H_type_tv as [H_value_tv | H_eval_tv].
+    + repeat eexists; apply E_ReactiveVar.
+      * assumption.
+      * reflexivity.
+    + inversion H_eval_tv as [tv' H_eval_tv']; clear H_eval_tv.
+      inversion H_eval_tv' as [theta' H_eval_tv'']; clear H_eval_tv'.
+      inversion H_eval_tv'' as [rho' H_eval_tv]; clear H_eval_tv''.
+      repeat eexists; apply EC_Var.
+      eassumption.
+    
+  
   - (* now *)
     admit.
 
   - (* set *)
-    admit.
+    intros T H_type_set; right.
+    inversion H_type_set as [| | | | | | | | | | | | | | | | |
+                              tmp0 tmp1 tmp2 tmp3 tmp4 tmp5 tmp6
+                              Tsource H_type_ttarget H_type_tsource
+                             | ];
+      subst.
+    assert (H_type_ttarget': program :: Psi; Delta; Gamma; P |- ttarget : Var Tsource).
+    { assumption. }     (* necessary to avoid losing H_type_ttarget
+                           TODO: is there a better way? *)
+    apply IHttarget in H_type_ttarget' as [H_value_ttarget | H_eval_ttarget];
+      clear IHttarget.
+    + assert (H_type_tsource': program :: Psi; Delta; Gamma; P |- tsource : Tsource).
+      { assumption. }   (* necessary to avoid losing H_type_tsource
+                           TODO: is there a better way? *)
+      apply IHtsource in H_type_tsource' as [H_value_tsource | H_eval_tsource];
+      clear IHtsource.
+      * inversion H_type_ttarget as [| | | | | | | | | | | | |
+                                      tmp0 tmp1 tmp2 tmp3 tmp4 
+                                      r tmp6
+                                      Tsource' H_type_r_Tsource  tmp9
+                                    | | | | | ];
+          subst; inversion H_value_ttarget; subst.
+        repeat eexists; apply E_Set; auto.
+      * inversion H_eval_tsource as [tsource' H_eval_tsource']; clear H_eval_tsource.
+        inversion H_eval_tsource' as [theta' H_eval_tsource'']; clear H_eval_tsource'.
+        inversion H_eval_tsource'' as [rho' H_eval_tsource]; clear H_eval_tsource''.
+        repeat eexists; apply EC_Set_Right; eauto.
+    + inversion H_eval_ttarget as [ttarget' H_eval_ttarget']; clear H_eval_ttarget.
+      inversion H_eval_ttarget' as [theta' H_eval_ttarget'']; clear H_eval_ttarget'.
+      inversion H_eval_ttarget'' as [rho' H_eval_ttarget]; clear H_eval_ttarget''.
+      repeat eexists; apply EC_Set_Left; eauto.
+        
 
 
   - (* peerApp *)

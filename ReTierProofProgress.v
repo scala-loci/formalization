@@ -3,8 +3,6 @@ Require Import ReTierStaticSemantics.
 Require Import ReTierDynamicSemantics.
 Require Import ReTierProofReactiveSystem.
 
-Require Import Omega.
-
 
 (* Definition 1 from the informal specification *)
 Definition config_complete program :=

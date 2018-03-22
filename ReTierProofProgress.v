@@ -3,6 +3,8 @@ Require Import ReTierStaticSemantics.
 Require Import ReTierDynamicSemantics.
 Require Import ReTierProofReactiveSystem.
 
+Require Import Omega.
+
 
 (* Definition 1 from the informal specification *)
 Definition config_complete program :=
@@ -80,16 +82,59 @@ remember emptyPlaceEnv as Delta.
 remember emptyVarEnv as Gamma.
 generalize dependent theta.
 induction H_typing; intros; subst.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- edestruct IHH_typing; try assumption || reflexivity.
+- (* idApp *)
+  right.
+  inversion H as [H_contradiction | (_ & H_contradiction)];
+    inversion H_contradiction.
+  
+- (* app *)
+  right. eapply IHH_typing1 in H_complete as IHH_typing1'; auto. clear IHH_typing1.
+  destruct IHH_typing1' as [H_value_t1 | H_eval_t1].
+  + eapply IHH_typing2 in H_complete as IHH_typing2'; auto. clear IHH_typing2.
+    destruct IHH_typing2' as [H_value_t2 | H_eval_t2].
+    * { destruct H_value_t1; inversion H_typing1; subst.
+        - repeat eexists. apply E_App. assumption.
+        - destruct H6 as [H_typing_r_signal | H_typing_r_var].
+          + inversion H_typing_r_signal.
+          + inversion H_typing_r_var.
+      }
+    * destruct H_eval_t2 as (t' & theta' & rho' & H_eval_t2).
+      repeat eexists; eapply EC_App_Right; eauto.
+  + destruct H_eval_t1 as (t' & theta' & rho' & H_eval_t1).
+    repeat eexists; eapply EC_App_Left; eassumption.
+  
+- (* lambda *)
+    left. apply v_lambda.
+- (* cons *)
+  eapply IHH_typing1 in H_complete as IHH_typing1'; eauto. clear IHH_typing1.
+  destruct IHH_typing1' as [H_value_t0 | H_eval_t0].
+  + eapply IHH_typing2 in H_complete as IHH_typing2'; eauto. clear IHH_typing2.
+    destruct IHH_typing2' as [H_value_t1 | H_eval_t1].
+    * left. apply v_cons; assumption.
+    * right. destruct H_eval_t1 as (t' & theta' & rho' & H_eval_t1).
+      repeat eexists; apply EC_Cons_Right; eauto.
+  + destruct H_eval_t0 as (t' & theta' & rho' & H_eval_t0).
+    right; repeat eexists; apply EC_Cons_Left; eassumption.
+  
+- (* nil *)
+  left. apply v_nil.
+- (* some *)
+  eapply IHH_typing in H_complete as IHH_typing'; auto. clear IHH_typing.
+  destruct IHH_typing' as [H_value_t | (t' & theta' & rho' & H_eval_t)]. 
+  + left; apply v_some; assumption.
+  + right; repeat eexists; eapply EC_Some; eassumption.
+  
+- (* none *)
+   left. apply v_none.
+   
+- (* unit *)
+  left. apply v_unit.
+  
+- (* peerApp *)
+  left. apply v_peerApp.
+  
+- (* asLocal *)
+  edestruct IHH_typing; try assumption || reflexivity.
   + pose proof some_phi.
     eapply H3 in H0; try assumption.
     destruct H0 as [ t' ].
@@ -98,7 +143,90 @@ induction H_typing; intros; subst.
   + destruct H2 as [ t' ], H2 as [ theta' ], H2 as [ rho' ].
     right. repeat esplit.
     apply E_Remote. eassumption.
-Admitted.
+    
+- (* asLocalFrom *)
+  right.
+  eapply IHH_typing2 in H_complete as IHH_typing2'; auto; clear IHH_typing2.
+  destruct IHH_typing2' as [H_value_t1 | H_eval_t1].
+  + inversion H_value_t1; subst; inversion H_typing2; subst.
+    * { eapply IHH_typing1 in H_complete as [H_value_t0 | H_eval_t0]; auto.
+        - repeat eexists; apply E_AsLocalFrom; auto.
+        - destruct H_eval_t0 as (t' & theta' & rho' & H_eval_t0). 
+          repeat eexists; apply E_RemoteFrom; eauto.
+      }
+    * destruct H8 as [H_contradiction | H_contradiction];
+        inversion H_contradiction.
+  + destruct H_eval_t1 as (t' & theta' & rho' & H_eval_t1).
+    repeat eexists; apply EC_AsLocalFrom; eauto.
+  
+- (* asLocalIn *)
+  right.
+  eapply IHH_typing1 in H_complete as IHH_typing1'; auto; clear IHH_typing1.
+  destruct IHH_typing1' as [H_value_t0 | (t' & theta' & rho' & H_eval_t0)].
+  + repeat eexists; apply E_Comp; auto.
+  + repeat eexists; apply EC_Comp; eauto.
+  
+- (* asLocalInFrom *)
+  right.
+  assert (H_complete' := H_complete).
+  eapply IHH_typing3 in H_complete as [H_value_t2 | (t2' & theta' & rho' & H_eval_t2)];
+    auto. clear IHH_typing3.
+  + inversion H_value_t2; subst; inversion H_typing3; subst.
+    * { eapply IHH_typing1 in H_complete' as [H_value_t0 | (t0' & theta' & rho' & H_eval_t1)];
+          auto.
+        - repeat eexists; apply E_CompFrom; auto.
+        - repeat eexists; apply EC_CompFrom_Left; eauto.
+      }
+    * destruct H9 as [H_contradiction | H_contradiction]; inversion H_contradiction.
+  + repeat eexists; apply EC_CompFrom_Right; eauto. 
+  
+- (* reactApp *)
+  left. apply v_reactApp.
+  
+- (* signal *)
+  right.
+  repeat eexists; apply E_Signal; reflexivity.
+  
+- (* var *)
+  right.
+  eapply IHH_typing in H_complete as [H_value_t | (t' & theta' & rho' & H_eval_t)];
+    auto.
+  + repeat eexists; apply E_ReactiveVar; try assumption || reflexivity.
+  + repeat eexists; apply EC_Var; eauto.
+  
+- (* now *)
+  right.
+  eapply IHH_typing in H_complete as [H_value_t | (t' & theta' & rho' & H_eval_t)];
+    auto; clear IHH_typing.
+  + destruct H; subst; inversion H_value_t; subst; inversion H_typing; subst.
+    * { inversion H_reactive_typing.
+        edestruct H1 as (t & T0 & T' & P' & H_lookup & H_rest).
+        - rewrite H. apply reactive_env_type_domain.
+          rewrite H0. discriminate.
+        - repeat eexists. apply E_Now. eapply H_lookup. 
+      }
+    * { (* TODO: remove duplicate *)
+        inversion H_reactive_typing.
+        edestruct H1 as (t & T0 & T' & P' & H_lookup & H_rest).
+        - rewrite H. apply reactive_env_type_domain.
+          rewrite H0. discriminate.
+        - repeat eexists. apply E_Now. eapply H_lookup. 
+      }
+  + repeat eexists; apply EC_Now; eauto.  
+  
+- (* set *)
+  right.
+  edestruct IHH_typing1 as [H_value_t1 | (t1' & theta1' & rho1' & H_eval_t1)]; auto.
+  + edestruct IHH_typing2 as [H_value_t2 | (t2' & theta2' & rho2' & H_eval_t2)];
+      auto.
+    * inversion H_value_t1; subst; inversion H_typing1; subst.
+      repeat eexists; apply E_Set; auto.
+    * repeat eexists; apply EC_Set_Right; eauto. 
+  + repeat eexists; apply EC_Set_Left; eauto.
+  
+- (* tnat *)
+  left. apply v_tnat.
+Qed.
 
 
 Lemma progress: forall program Psi Delta Gamma P theta rho t T,

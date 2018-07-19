@@ -261,8 +261,11 @@ remember emptyVarEnv as Gamma.
 generalize dependent theta.
 generalize dependent t'.
 induction H_typing; intros; subst.
-- inversion H_eval.
-- inversion H_eval; subst.
+- (* idApp *)
+  inversion H_eval.
+  
+- (* app *)
+  inversion H_eval; subst.
   + apply IHH_typing1 in H8; try assumption || reflexivity.
     destruct H8 as [ Psi' ].
     destruct H, H0.
@@ -284,8 +287,12 @@ induction H_typing; intros; subst.
     * apply reactive_typing_extends_refl.
     * split; try assumption.
       eapply substitution_t; eassumption.
-- inversion H_eval.
-- inversion H_eval; subst.
+      
+- (* lambda *)
+  inversion H_eval.
+  
+- (* cons *)
+  inversion H_eval; subst.
   + apply IHH_typing1 in H8; try assumption || reflexivity.
     destruct H8 as [ Psi' ].
     destruct H, H0.
@@ -300,17 +307,110 @@ induction H_typing; intros; subst.
     do 2 (split; try assumption).
     eapply T_Cons; try eassumption.
     eapply reactive_typing_weakening_t; eassumption.
-- inversion H_eval.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- admit.
-- inversion H_eval.
+    
+- (* nil *)
+  inversion H_eval.
+  
+- (* some *)
+  inversion H_eval; subst.
+  edestruct IHH_typing as (Psi' & (H_ext & H_typing_t' & H_typing_rho')); eauto.  
+  eexists; split; eauto; split.
+  + apply T_Some. assumption.
+  + assumption.
+  
+- (* none *)
+  inversion H_eval.
+  
+- (* unit *)
+  inversion H_eval.
+  
+- (* peerApp *)
+  inversion H_eval.
+  
+- (* asLocal *)
+  inversion H_eval; subst.
+  + exists Psi; split.
+    * apply reactive_typing_extends_refl.
+    * { split.
+        - eapply aggregation; eauto. apply List.incl_refl.
+        - assumption.
+      }
+  + edestruct IHH_typing as (Psi' & H_extends & H_typing_t' & H_typing_rho');
+      eauto. 
+    * apply List.incl_refl.
+    * eexists; split; try split; eauto.
+      apply T_AsLocal; auto.
+  
+- (* asLocalFrom *)
+  inversion H_eval; subst.
+  + edestruct IHH_typing2 as (Psi' & H_extends & H_typing_t1' & H_typing_rho');
+      clear IHH_typing2; eauto.
+    eexists; split; try split; eauto.
+    apply T_AsLocalFrom; auto.
+    eapply reactive_typing_weakening_t; eauto.
+  + exists Psi; split; try split.
+    * apply reactive_typing_extends_refl.
+    * (* TODO: prove zeta case
+          H_typing1 : program :: Psi; emptyPlaceEnv; emptyVarEnv; P1 |- t0 : T
+          H12 : value t0
+          ----------------------------------------------------------------------
+          program :: Psi; emptyPlaceEnv; emptyVarEnv; P0 |- zeta P1 theta'0 t0 T : T
+       *)
+      (*
+      { assert (H_peer_invariance: forall program Psi Gamma P P' t T,
+                    program :: Psi; emptyPlaceEnv; Gamma; P |- t : T ->
+                    program :: Psi; emptyPlaceEnv; Gamma; P' |- t : T).
+        {
+          admit.
+        }
+        inversion H12; subst; inversion H_typing1; subst; simpl.
+        - apply T_Abs.
+          eapply H_peer_invariance; eauto.
+        - apply T_Unit.
+        - apply T_None.
+        - 
+      *)
+      (*
+      assert (H_zeta_type: forall program Psi P0 P1 t T theta,
+                  program :: Psi; emptyPlaceEnv; emptyVarEnv; P1 |- t : T -> 
+                  program :: Psi; emptyPlaceEnv; emptyVarEnv; P0 |- zeta P1 theta t T : T).
+      { admit. }
+      apply H_zeta_type. assumption.
+      *)
+      inversion H_typing2; subst.
+      apply zeta_type_invariance; auto.
+    * assumption.
+  + edestruct IHH_typing1 as (Psi' & H_extends & H_typing_t'0 & H_typing_rho');
+      clear IHH_typing1; eauto.
+    * inversion H_typing2; subst. assumption.
+    * eexists; split; try split; eauto.
+      apply T_AsLocalFrom; auto.
+      eapply reactive_typing_weakening_t; eauto.
+  
+- (* asLocalIn *)
+  inversion H_eval; subst.
+  + edestruct IHH_typing1 as [Psi' (H_extends & H_typing_t0' & H_typing_rho')]; 
+      eauto.
+    eexists; split; try split; eauto.
+    apply T_Comp; auto.
+    eapply reactive_typing_weakening_t; eauto.
+  + exists Psi; split.
+    * apply reactive_typing_extends_refl.
+    * split; try assumption.
+      apply T_AsLocal; auto.
+      eapply substitution_t; try eassumption.
+      apply zeta_type_invariance; auto.
+      apply mutualTiesSymmetric.
+      assumption.
+       
+  
+- (* asLocalInFrom *)
+  admit.
+- (* reactApp *)
+  admit.
+  
+- (* signal *)
+  inversion H_eval.
   subst.
   pose proof reactive_typing_add.
   specialize H with program Psi emptyPlaceEnv emptyVarEnv rho P t T (Signal T).
@@ -324,7 +424,9 @@ induction H_typing; intros; subst.
   do 2 (split; try assumption).
   eapply T_Reactive; try eassumption.
   left. reflexivity.
-- inversion H_eval; subst.
+  
+- (* var *)
+  inversion H_eval; subst.
   + apply IHH_typing in H3; try assumption || reflexivity.
     destruct H3 as [ Psi' ].
     destruct H, H0.
@@ -344,6 +446,13 @@ induction H_typing; intros; subst.
     do 2 (split; try assumption).
     eapply T_Reactive; try eassumption.
     right. reflexivity.
+
+- (* now *)
+  admit.
+- (* set *)
+  admit.
+- (* tnat *)
+  admit.
 Admitted.
 
 
@@ -409,7 +518,9 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
 - (* some *)
   intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
-  assumption.
+(*  assumption.
+*)
+admit.
 - (* nil *)
   intros theta' theta varEnv t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
@@ -544,7 +655,8 @@ induction t as [  x Tx body (* lambda : id -> T -> t -> t *)
   intros theta' theta Gamma t' T P H_stat H_dyn H_inst.
   inversion H_dyn.
 
-Qed.
+(*Qed.*)
+Admitted.
 
 
 

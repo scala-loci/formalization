@@ -499,3 +499,20 @@ Proof.
     + reflexivity.
     + eapply E_Now. reflexivity.
 Qed.
+
+
+Example testLocalStep_EAsLocalFrom_2:
+  reactive_system_lookup testSignal1 testReactSys_var1_signal1 = Some (reactApp testVar1) /\
+  (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
+  asLocalFrom (reactApp testSignal1) (*:*) (Signal (Option Unit) on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_var1_signal1
+  == testPeerInsts1
+  ==> signal (asLocalInFrom (Id "") (*:*) Unit (*=*) unit
+                  (*in*) (now (reactApp testSignal1)) (*:*) (Option Unit on (Peer "ps")) 
+                  (*from*) (peerApp (Instance 2))); testReactSys_var1_signal1.
+Proof. 
+  split.
+  - reflexivity.
+  - apply E_AsLocalFrom.
+    + apply v_reactApp.
+    +  reflexivity.
+Qed.

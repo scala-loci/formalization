@@ -132,3 +132,60 @@ destruct (peer_ties program (P0, P1)) eqn: H_tie; inversion H_phi_type; subst.
 - eapply aggregation_single; eassumption.
 Qed.
 
+
+(** lemmas about aggregation via zeta **)
+
+
+Lemma zeta_type_invariance:
+  forall program Psi Gamma P P' t T theta,
+  value t ->
+  transmittable_type T ->
+  peers_tied program P' P ->
+  List.incl theta (peer_instances_of_type program P) ->
+  program :: Psi; emptyPlaceEnv; Gamma; P |- t : T -> 
+  program :: Psi; emptyPlaceEnv; Gamma; P' |- zeta P theta t T : T.
+Proof.
+  intros program Psi Gamma P P' t T theta H_value H_trans H_tied H_peers H_typing.
+  remember emptyPlaceEnv as Delta.
+  (*remember emptyVarEnv as Gamma.*)
+(*  generalize dependent t. *)
+(*  generalize dependent T. *)
+  induction H_typing; simpl; inversion H_value; subst.
+  - (* lambda *)
+    inversion H_trans.
+  - (* cons *)
+    apply T_Cons.
+    + apply IHH_typing1; auto.
+      inversion H_trans; subst; assumption.
+    + apply IHH_typing2; auto.
+  - (* nil *)
+    apply T_Nil.
+  - (* some *)
+    apply T_Some.
+    apply IHH_typing; auto.
+    inversion H_trans; subst; assumption.
+  - (* none *)
+    apply T_None.
+  - (* unit *)
+    apply T_Unit.
+  - (* peerApp *)
+    apply T_Peer; auto.
+  - (* reactApp *)
+    destruct H0; subst.
+    + inversion H_trans; subst.
+      apply T_Signal. apply T_ComFrom; auto.
+      * apply U_Unit.
+      * apply T_Unit.
+      * eapply T_Now. eapply T_Reactive; eauto.
+        left; reflexivity.  
+      * apply T_Peer. assumption.
+    + inversion H_trans.
+  - (* tnat *)
+    apply T_Nat.
+Qed.
+    
+    
+    
+    
+    
+    

@@ -405,7 +405,32 @@ induction H_typing; intros; subst.
        
   
 - (* asLocalInFrom *)
-  admit.
+  inversion H_eval; subst.
+  + edestruct IHH_typing3 as [Psi' (H_ext & H_typing_t2' & H_typing_rho')]; eauto.
+    eexists; repeat split; eauto.
+    * apply T_ComFrom; auto; eapply reactive_typing_weakening_t; eauto.
+    * inversion H_typing_rho'.
+      assumption.
+    * inversion H_typing_rho'.
+      assumption.
+  + edestruct IHH_typing1 as [Psi' (H_ext & H_typing_t' & H_typing_rho')]; eauto.
+    eexists; repeat split; eauto.
+    * apply T_ComFrom; auto;
+        eapply context_invariance_t; eauto;
+          eapply reactive_typing_weakening_t; eauto.
+    * inversion H_typing_rho'; assumption.
+    * inversion H_typing_rho'; assumption.
+  + exists Psi; repeat split.
+    * apply reactive_typing_extends_refl.
+    * apply T_AsLocalFrom; auto.
+      eapply substitution_t; eauto.
+      apply zeta_type_invariance; auto.
+      apply mutualTiesSymmetric; assumption.
+    * inversion H_reactive_typing; assumption.
+    * inversion H_reactive_typing; assumption.
+      
+  
+  
 - (* reactApp *)
   admit.
   

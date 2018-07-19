@@ -350,34 +350,7 @@ induction H_typing; intros; subst.
     eapply reactive_typing_weakening_t; eauto.
   + exists Psi; split; try split.
     * apply reactive_typing_extends_refl.
-    * (* TODO: prove zeta case
-          H_typing1 : program :: Psi; emptyPlaceEnv; emptyVarEnv; P1 |- t0 : T
-          H12 : value t0
-          ----------------------------------------------------------------------
-          program :: Psi; emptyPlaceEnv; emptyVarEnv; P0 |- zeta P1 theta'0 t0 T : T
-       *)
-      (*
-      { assert (H_peer_invariance: forall program Psi Gamma P P' t T,
-                    program :: Psi; emptyPlaceEnv; Gamma; P |- t : T ->
-                    program :: Psi; emptyPlaceEnv; Gamma; P' |- t : T).
-        {
-          admit.
-        }
-        inversion H12; subst; inversion H_typing1; subst; simpl.
-        - apply T_Abs.
-          eapply H_peer_invariance; eauto.
-        - apply T_Unit.
-        - apply T_None.
-        - 
-      *)
-      (*
-      assert (H_zeta_type: forall program Psi P0 P1 t T theta,
-                  program :: Psi; emptyPlaceEnv; emptyVarEnv; P1 |- t : T -> 
-                  program :: Psi; emptyPlaceEnv; emptyVarEnv; P0 |- zeta P1 theta t T : T).
-      { admit. }
-      apply H_zeta_type. assumption.
-      *)
-      inversion H_typing2; subst.
+    * inversion H_typing2; subst.
       apply zeta_type_invariance; auto.
     * assumption.
   + edestruct IHH_typing1 as (Psi' & H_extends & H_typing_t'0 & H_typing_rho');

@@ -405,7 +405,9 @@ induction H_typing; intros; subst.
   
   
 - (* reactApp *)
-  admit.
+  inversion H_eval.   (* TODO: Which rule allows formation of H_eval?
+                       * Does this case ever occurr?
+                       *)
   
 - (* signal *)
   inversion H_eval.
@@ -446,7 +448,50 @@ induction H_typing; intros; subst.
     right. reflexivity.
 
 - (* now *)
-  admit.
+  inversion H_eval as [| | | | | | | | | |
+                        tmp0 tmp1 tmp2 tmp3 tmp4 t'' tmp6 tmp7 H_eval_t
+                        | | | | | | | | | | | | | ]; subst.
+  + edestruct IHH_typing as [Psi' (H_ext & H_typing_t'0 & H_typing_rho')]; eauto.
+    eexists; split; repeat split; eauto.
+    * eapply T_Now; eassumption.
+    * inversion H_typing_rho'; assumption.
+    * inversion H_typing_rho'; assumption.
+  + exists Psi; repeat split.
+    * apply reactive_typing_extends_refl.
+    * inversion H_reactive_typing as [H_eq_domain H_fa].
+      { specialize (H_fa r) as (t_lr & T_lr & T' & P_lr & H_lookup_tlr &
+                                H_lookup_Tlr & H_structure_Tlr & H_typing_tlr).
+        - apply reactive_system_lookup_domain.
+          congruence.
+        - rewrite H_lookup_tlr in H0.   (* TODO: rename H0 *)
+          inversion H0; subst.
+          
+          (* TODO: simplify rest ... we construct a lot of duplicate hypothesis *)
+          inversion H_typing; subst.
+          (* inversion H_reactive_typing as [H_eq_rho']. *)
+          inversion H_reactive_typing as
+            [H_eq_rho'_Psi (t & T0' & T1' & P'
+                            & H_lookup_t & H_lookup_T0'_P' & H_T0 & H_ex)].
+          + apply reactive_system_lookup_domain with (r := r).
+            congruence.
+          + rewrite H_lookup_tlr in H_lookup_t.
+            inversion H_lookup_t as [H_eq_t'_t].
+            clear H_lookup_t.
+            rewrite H_lookup_Tlr in H_lookup_T0'_P'.
+            inversion H_lookup_T0'_P' as [(H_eq_Tlr_T0' & H_eq_Plr_P')].
+            clear H_lookup_T0'_P'.
+            rewrite H2 in H_lookup_Tlr.
+            inversion H_lookup_Tlr as [(H_eq_T0_Tlr & H_eq_P_Plr)].
+            clear H_lookup_Tlr.
+            subst.
+            (* TODO: assign a fixed name to H during construction *)
+            destruct H_T0; destruct H; congruence.
+      }
+    * inversion H_reactive_typing.
+      assumption.
+    * inversion H_reactive_typing.
+      assumption.
+  
 - (* set *)
   admit.
 - (* tnat *)

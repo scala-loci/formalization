@@ -4,6 +4,10 @@ Require Import ReTierDynamicSemantics.
 Require Import ReTierProofReactiveSystem.
 
 
+Inductive value_s : s -> Prop :=
+  | v_pUnit : value_s pUnit.
+
+
 (* Definition 1 from the informal specification *)
 Definition config_complete program :=
   forall P0 P1,
@@ -227,6 +231,30 @@ induction H_typing; intros; subst.
 Qed.
 
 
+Theorem progress_s: forall s program Psi rho,
+  config_complete program ->
+  program :: Psi; emptyPlaceEnv |- s ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv |- rho ->
+  value_s s \/ exists s' theta rho', program :: s; rho == theta ==> s'; rho'.
+Proof.
+intros until rho.
+intros H_complete H_typing H_reactive_typing.
+remember emptyPlaceEnv as Delta.
+destruct H_typing; intros; subst.
+- left. apply v_pUnit.
+- eapply progress_t in H_complete; try eassumption.
+  destruct H_complete.
+  + right. repeat esplit.
+    apply E_Placed_Val.
+    assumption.
+  + destruct H0 as [ t' ], H0 as [ theta' ], H0 as [ rho' ].
+    right. repeat esplit.
+    eapply E_Placed.
+    eassumption.
+Qed.
+
+
+(*
 Lemma progress: forall program Psi Delta Gamma P theta rho t T,
   program :: Psi; Delta; Gamma; P |- t : T ->
   (value t \/ exists t' theta' rho', program :: theta : P |> t; rho == theta' ==> t'; rho').
@@ -441,26 +469,4 @@ Proof.
   - (* tnat *)
     intros T H. left. apply v_tnat.
 Admitted.
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+*)

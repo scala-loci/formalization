@@ -523,6 +523,39 @@ induction H_typing; intros; subst.
 Qed.
 
 
+Theorem preservation_s: forall s s' theta program Psi rho rho',
+  program :: Psi; emptyPlaceEnv |- s ->
+  program :: Psi; emptyPlaceEnv; emptyVarEnv |- rho ->
+  program :: s; rho == theta ==> s'; rho' ->
+  exists Psi',
+    Psi' extends Psi /\
+    program :: Psi'; emptyPlaceEnv |- s' /\
+    program :: Psi'; emptyPlaceEnv; emptyVarEnv |- rho'.
+Proof.
+intros until rho'.
+intros H_typing H_reactive_typing H_eval.
+remember emptyPlaceEnv as Delta.
+generalize dependent s'.
+destruct H_typing; intros; subst.
+- inversion H_eval.
+- inversion H_eval; subst.
+  + eapply preservation_t in H10; try eassumption.
+    * destruct H10 as [ Psi' ].
+      destruct H0, H1.
+      exists Psi'.
+      do 2 (split; try assumption).
+      apply T_Place; try assumption.
+      eapply reactive_typing_weakening_s; eassumption.
+    * apply List.incl_refl.
+  + exists Psi.
+    split.
+    * apply reactive_typing_extends_refl.
+    * split; try assumption.
+      eapply substitution_s; eassumption.
+Qed.
+
+
+(*
 Lemma preservation_nonReactive: forall t t' T theta theta' program Psi Delta Gamma P rho rho',
   program :: Psi; Delta; Gamma; P |- t : T ->
   program :: theta : P |> t; rho == theta' ==> t'; rho' ->
@@ -817,4 +850,5 @@ apply T_AsLocal with (P0 := P).
     2,3: simpl; assumption.
     
     Abort.
+*)
 *)

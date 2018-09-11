@@ -11,12 +11,14 @@ Require Import ReTierProofPeerTies.
 
 
 
+(*
 Lemma substitution_t_relaxed:
   forall program Psi Delta Gamma P x t T v U,
   program :: Psi; Delta; idUpdate x U Gamma; P |- t : T ->
   program :: Psi; Delta; Gamma; P |- v : U ->
   program :: Psi; Delta; Gamma; P |- [x :=_t v] t : T.
 Admitted.
+*)
 
 
 
@@ -492,11 +494,33 @@ induction H_typing; intros; subst.
     * inversion H_reactive_typing.
       assumption.
   
-- (* set *)
-  admit.
-- (* tnat *)
-  admit.
-Admitted.
+- inversion H_eval; subst.
+  + apply IHH_typing1 in H8; try assumption || reflexivity.
+    destruct H8 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_Set; try eassumption.
+    eapply reactive_typing_weakening_t; eassumption.
+  + apply IHH_typing2 in H9; try assumption || reflexivity.
+    destruct H9 as [ Psi' ].
+    destruct H, H0.
+    exists Psi'.
+    do 2 (split; try assumption).
+    eapply T_Set; try eassumption.
+    eapply reactive_typing_weakening_t; eassumption.
+  + inversion H_typing1.
+    subst.
+    pose proof reactive_typing_update.
+    specialize H with program Psi emptyPlaceEnv emptyVarEnv rho r P t2 T.
+    apply H in H_reactive_typing as H1; try assumption.
+    exists Psi.
+    split.
+    * apply reactive_typing_extends_refl.
+    * split; try assumption.
+      apply T_Unit.
+- inversion H_eval.
+Qed.
 
 
 Lemma preservation_nonReactive: forall t t' T theta theta' program Psi Delta Gamma P rho rho',

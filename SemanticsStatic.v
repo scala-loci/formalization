@@ -1,27 +1,14 @@
-Require Import ReTierSyntax.
 Require Import Maps.
+Require Import Syntax.
 Require Coq.Lists.List.
 
 
-(** Typing environment for placed variables, named Delta in informal specification. **)
 Definition placeEnv := partial_map id S.
 Definition emptyPlaceEnv: placeEnv := idEmpty.
 
-(** Typing environment for normal variables, named Gamma in informal specification. **)
-Definition varEnv   := partial_map id T.
+Definition varEnv := partial_map id T.
 Definition emptyVarEnv: varEnv := idEmpty.
 
-
-(**
- ----------------------------------------------------------------------------
-  Below we use the following notation taken from the informal specification.
-
-  Psi   : typing environment for reactives
-  Delta : typing environment for placed variables
-  Gamma : typing environment for variables
-  P     : current peer
- ----------------------------------------------------------------------------
-**)
 
 Reserved Notation "program :: Psi ; Delta ; Gamma ; P |- t : T"
   (at level 40,
@@ -44,10 +31,6 @@ Definition phi (ties: ties) (P0 P1: P) (T: T) :=
   end.
 
 
-
-(* --------------------------------------------------------------------- *)
-
-
 Definition reactiveEnv := list S.
 
 Definition reactive_type (r: r) (env: reactiveEnv): option S :=
@@ -55,7 +38,6 @@ Definition reactive_type (r: r) (env: reactiveEnv): option S :=
 
 Definition reactive_type_add (S: S) (env: reactiveEnv): r * reactiveEnv :=
   (Reactive (length env), List.app env (Datatypes.cons S Datatypes.nil)).
-
 
 
 Inductive typing_t : program -> reactiveEnv -> placeEnv -> varEnv -> P -> t -> T -> Prop :=
@@ -172,5 +154,3 @@ Inductive typing_s : program -> reactiveEnv -> placeEnv -> s -> Prop :=
       program :: Psi; Delta |- placed x (T on P) t s
 
 where "program :: Psi ; Delta |- s" := (typing_s program Psi Delta s).
-
-

@@ -1,6 +1,6 @@
-Require Import ReTierSyntax.
-Require Import ReTierStaticSemantics.
-Require Import ReTierDynamicSemantics.
+Require Import Syntax.
+Require Import SemanticsStatic.
+Require Import SemanticsDynamic.
 Require Import Coq.Lists.List.
 
 Definition reactive_index r := match r with Reactive n => n end.

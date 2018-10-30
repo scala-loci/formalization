@@ -1,7 +1,7 @@
-Require Import ReTierSyntax.
-Require Import ReTierStaticSemantics.
-Require Import ReTierDynamicSemantics.
-Require Import ReTierProofContext.
+Require Import Syntax.
+Require Import SemanticsStatic.
+Require Import SemanticsDynamic.
+Require Import ProofContext.
 
 
 Lemma substitution_t_generalized:

@@ -1,17 +1,9 @@
-Require Import ReTierSyntax.
+Require Import Syntax.
 Require Import Maps.
 Require Coq.Lists.List.
 Require Coq.Lists.ListSet.
+Require Coq.Strings.String.
 
-(**
- ----------------------------------------------------------------------------
-  Below we use the following notation taken from the informal specification.
-
-  rho   : reactive system
-  theta : peer instances
-  P     : current peer
- ----------------------------------------------------------------------------
-**)
 
 Reserved Notation "program :: theta : P |> t ; rho == theta' ==> t' ; rho'"
   (at level 40,
@@ -29,7 +21,7 @@ Fixpoint zeta (P: P) (theta: peer_instances) (v: t) (T: T): t :=
   match v, T with
   | cons v0 v1, List T => cons (zeta P theta v0 T) (zeta P theta v1 (List T))
   | some v, Option T => some (zeta P theta v T)
-  | reactApp r, Signal T => signal (asLocalInFrom (Id "") Unit unit (now v) (T on P) (peerApp theta))
+  | reactApp r, Signal T => signal (asLocalInFrom (Id String.EmptyString) Unit unit (now v) (T on P) (peerApp theta))
   | _, _ => v
   end.
 
@@ -47,9 +39,6 @@ Fixpoint Phi (ties: ties) (P0 P1: P) (theta: ListSet.set p) (v: t) (T: T): optio
   | Single, _ => Datatypes.None
   | None, _ => Datatypes.None
   end.
-
-
-(* --------------------------------------------------------------------- *)
 
 
 Fixpoint subst_t x value term: t :=
@@ -127,7 +116,6 @@ Fixpoint subst_s x value term: s :=
 Notation "[ id :=_s value ] term" := (subst_s id value term) (at level 30).
 
 
-
 Definition reactive_system := list t.
 
 Definition reactive_system_lookup (r: r) (system: reactive_system): option t :=
@@ -145,46 +133,7 @@ Fixpoint reactive_system_update (r: r) (t: t) (system: reactive_system): reactiv
   end.
 
 
-(*
-Definition context := t -> t.
-
-Inductive is_context: context -> Prop :=
-  | C_Hole: is_context (fun t => t)
-  | C_App_Left: forall t0 context,
-      is_context context ->
-      is_context (fun t => app (context t) t0)
-  | C_App_Right: forall v context,
-      value v ->
-      is_context context ->
-      is_context (fun t => app v (context t)).
-*)
-
-(*
-Inductive evaluation_congruence: t -> t -> t -> t -> Prop :=
-  | C_App_Left: forall t0 t0' t1,
-      evaluation_congruence t0 t0' (app t0 t1) (app t0' t1)
-  | C_App_Right: forall v t1 t1',
-      value v ->
-      evaluation_congruence t1 t1' (app v t1) (app v t1')
-  | C_Some: forall t t',
-      evaluation_congruence t t' (some t) (some t').
-*)
-
 Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system -> peer_instances -> t -> reactive_system -> Prop :=
-
-(*
-  | E_Context: forall program theta theta' P t t' rho rho' context,
-      is_context context ->
-      t <> context t ->
-      program :: theta : P |> t; rho == theta' ==> t'; rho' ->
-      program :: theta : P |> context t; rho == theta' ==> context t'; rho'
-*)
-(*
-  | E_Congruence: forall program theta theta' P t0 t0' t1 t1' rho rho',
-      evaluation_congruence t0 t0' t1 t1' ->
-      program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
-      program :: theta : P |> t1; rho == theta' ==> t1'; rho'
-*)
 
   (* contextual congruence *)
 
@@ -193,7 +142,7 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
       program :: theta : P |> app t0 t1; rho == theta' ==> app t0' t1; rho'
 
   | EC_App_Right: forall program theta theta' P v t1 t1' rho rho',
-      value v ->
+      value_t v ->
       program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
       program :: theta : P |> app v t1; rho == theta' ==> app v t1'; rho'
 
@@ -206,7 +155,7 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
       program :: theta : P |> cons t0 t1; rho == theta' ==> cons t0' t1; rho'
 
   | EC_Cons_Right: forall program theta theta' P v t1 t1' rho rho',
-      value v ->
+      value_t v ->
       program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
       program :: theta : P |> cons v t1; rho == theta' ==> cons v t1'; rho'
 
@@ -226,45 +175,45 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         == theta' ==> asLocalInFrom x (*:*) T (*=*) t0 (*in*) t1 (*:*) S (*from*) t2'; rho'
 
   | EC_CompFrom_Left: forall program theta theta' P T S x v t0 t0' t1 rho rho',
-      value v ->
+      value_t v ->
       program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
         program :: theta : P |> asLocalInFrom x (*:*) T (*=*) t0 (*in*) t1 (*:*) S (*from*) v; rho
         == theta' ==> asLocalInFrom x (*:*) T (*=*) t0' (*in*) t1 (*:*) S (*from*) v; rho'
 
   | EC_Var: forall program theta theta' P t t' rho rho',
       program :: theta : P |> t; rho == theta' ==> t'; rho' ->
-      program :: theta : P |> var t; rho == theta' ==> var t'; rho'
+      program :: theta : P |> var t; rho == theta' ==> var t; rho'
 
   | EC_Now: forall program theta theta' P t t' rho rho',
       program :: theta : P |> t; rho == theta' ==> t'; rho' ->
-      program :: theta : P |> now t; rho == theta' ==> now t'; rho'
+      program :: theta : P |> now t; rho == theta' ==> now t; rho'
 
   | EC_Set_Left: forall program theta theta' P t0 t0' t1 rho rho',
       program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
       program :: theta : P |> set t0 (*:=*) t1; rho == theta' ==> set t0' (*:=*) t1; rho'
 
   | EC_Set_Right: forall program theta theta' P v t1 t1' rho rho',
-      value v ->
+      value_t v ->
       program :: theta : P |> t1; rho == theta' ==> t1'; rho' ->
       program :: theta : P |> set v (*:=*) t1; rho == theta' ==> set v (*:=*) t1'; rho'
 
   (* local computation *)
 
   | E_App: forall program theta P x v t T rho,
-      value v ->
+      value_t v ->
         program :: theta : P |> app (lambda x T t) v; rho
         == theta ==> [x :=_t v] t; rho
 
   (* remote access *)
 
   | E_AsLocal: forall program theta P0 P1 v v' T rho,
-      value v ->
+      value_t v ->
       Phi (peer_ties program) P0 P1 (peer_instances_of_type program P1) v T = Some v' ->
         program :: theta : P0 |> asLocal v (*:*) (T on P1); rho
         == theta ==> v'; rho
 
   | E_Comp: forall program theta P0 P1 x v t t' T0 T1 rho,
-      value v ->
+      value_t v ->
       zeta P0 theta v T0 = t' ->
         program :: theta : P0 |> asLocalIn x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1); rho
         == peer_instances_of_type program P1 ==> asLocal ([x :=_t t'] t) (*:*) (T1 on P1); rho
@@ -275,13 +224,13 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
         == theta' ==> asLocal t' (*:*) (T on P1); rho'
 
   | E_AsLocalFrom: forall program theta theta' P0 P1 v t T rho,
-      value v ->
+      value_t v ->
       zeta P1 theta' v T = t ->
         program :: theta : P0 |> asLocalFrom v (*:*) (T on P1) (*from*) (peerApp theta'); rho
         == theta ==> t; rho
 
   | E_CompFrom: forall program theta theta' P0 P1 x v t t' T0 T1 rho,
-      value v ->
+      value_t v ->
       zeta P0 theta v T0 = t' ->
         program :: theta : P0 |> asLocalInFrom x (*:*) T0 (*=*) v (*in*) t (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
         == theta' ==> asLocalFrom ([x :=_t t'] t) (*:*) (T1 on P1) (*from*) (peerApp theta'); rho
@@ -294,7 +243,7 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
   (* reactive rules *)
 
   | E_ReactiveVar: forall program theta P v r rho rho',
-      value v ->
+      value_t v ->
       reactive_system_add v rho = (r, rho') ->
         program :: theta : P |> var v; rho
         == theta ==> reactApp r; rho'
@@ -306,7 +255,7 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
 
   | E_Set: forall program theta P v r rho rho',
       reactive_system_update r v rho = rho'->
-      value v ->
+      value_t v ->
         program :: theta : P |> set (reactApp r) (*:=*) v; rho
         == theta ==> unit; rho'
 
@@ -326,9 +275,8 @@ Inductive evaluation_s : program -> s -> reactive_system -> peer_instances -> s 
         == theta ==> placed x (T on P) t' s; rho'
 
   | E_Placed_Val: forall program P x v s T rho,
-      value v ->
+      value_t v ->
         program :: placed x (T on P) v s; rho
         == peer_instances_all program ==> [x :=_s v] s; rho
 
 where "program :: s ; rho == theta ==> s' ; rho'" := (evaluation_s program s rho theta s' rho').
-

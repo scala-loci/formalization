@@ -1,5 +1,5 @@
-Require Import ReTierSyntax.
-Require Import ReTierStaticSemantics.
+Require Import Syntax.
+Require Import SemanticsStatic.
 
 
 Lemma gamma_typing : forall (Gamma: varEnv) (x: id),

@@ -1,9 +1,9 @@
-Require Import ReTierSyntax.
-Require Import ReTierStaticSemantics.
-Require Import ReTierDynamicSemantics.
+Require Import Syntax.
+Require Import SemanticsStatic.
+Require Import SemanticsDynamic.
 
 Lemma transmission : forall program Psi Delta Delta' Gamma Gamma' P P' theta v T,
-  value v ->
+  value_t v ->
   transmittable_type T ->
   peers_tied program P' P ->
   List.incl theta (peer_instances_of_type program P) ->

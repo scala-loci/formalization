@@ -1,13 +1,13 @@
-Require Import ReTierSyntax.
-Require Import ReTierStaticSemantics.
-Require Import ReTierDynamicSemantics.
-Require Import ReTierProofTransmission.
+Require Import Syntax.
+Require Import SemanticsStatic.
+Require Import SemanticsDynamic.
+Require Import ProofTransmission.
 
 Lemma aggregation_multiple:
   forall program Psi Delta Delta' Gamma Gamma' P0 P1 peers v v_agg v_type,
   peers_tied program P0 P1 ->
   peer_ties program (P0, P1) = Multiple ->
-  value v ->
+  value_t v ->
   transmittable_type v_type ->
   List.incl peers (peer_instances_of_type program P1) ->
   program :: Psi; Delta; Gamma; P1 |- v : v_type ->
@@ -64,7 +64,7 @@ Lemma aggregation_optional:
   forall program Psi Delta Delta' Gamma Gamma' P0 P1 peers v v_agg v_type,
   peers_tied program P0 P1 ->
   peer_ties program (P0, P1) = Optional ->
-  value v ->
+  value_t v ->
   transmittable_type v_type ->
   List.incl peers (peer_instances_of_type program P1) ->
   program :: Psi; Delta; Gamma; P1 |- v : v_type ->
@@ -91,7 +91,7 @@ Lemma aggregation_single:
   forall program Psi Delta Delta' Gamma Gamma' P0 P1 peers v v_agg v_type,
   peers_tied program P0 P1 ->
   peer_ties program (P0, P1) = Single ->
-  value v ->
+  value_t v ->
   transmittable_type v_type ->
   List.incl peers (peer_instances_of_type program P1) ->
   program :: Psi; Delta; Gamma; P1 |- v : v_type ->
@@ -117,7 +117,7 @@ Lemma aggregation:
   peers_tied program P0 P1 ->
   Phi (peer_ties program) P0 P1 peers v v_type = Some v_agg ->
   phi (peer_ties program) P0 P1 v_type = Some v_agg_type ->
-  value v ->
+  value_t v ->
   transmittable_type v_type ->
   List.incl peers (peer_instances_of_type program P1) ->
   program :: Psi; Delta; Gamma; P1 |- v : v_type ->
@@ -131,61 +131,3 @@ destruct (peer_ties program (P0, P1)) eqn: H_tie; inversion H_phi_type; subst.
 - eapply aggregation_optional; eassumption.
 - eapply aggregation_single; eassumption.
 Qed.
-
-
-(** lemmas about aggregation via zeta **)
-
-
-Lemma zeta_type_invariance:
-  forall program Psi Gamma P P' t T theta,
-  value t ->
-  transmittable_type T ->
-  peers_tied program P' P ->
-  List.incl theta (peer_instances_of_type program P) ->
-  program :: Psi; emptyPlaceEnv; Gamma; P |- t : T -> 
-  program :: Psi; emptyPlaceEnv; Gamma; P' |- zeta P theta t T : T.
-Proof.
-  intros program Psi Gamma P P' t T theta H_value H_trans H_tied H_peers H_typing.
-  remember emptyPlaceEnv as Delta.
-  (*remember emptyVarEnv as Gamma.*)
-(*  generalize dependent t. *)
-(*  generalize dependent T. *)
-  induction H_typing; simpl; inversion H_value; subst.
-  - (* lambda *)
-    inversion H_trans.
-  - (* cons *)
-    apply T_Cons.
-    + apply IHH_typing1; auto.
-      inversion H_trans; subst; assumption.
-    + apply IHH_typing2; auto.
-  - (* nil *)
-    apply T_Nil.
-  - (* some *)
-    apply T_Some.
-    apply IHH_typing; auto.
-    inversion H_trans; subst; assumption.
-  - (* none *)
-    apply T_None.
-  - (* unit *)
-    apply T_Unit.
-  - (* peerApp *)
-    apply T_Peer; auto.
-  - (* reactApp *)
-    destruct H0; subst.
-    + inversion H_trans; subst.
-      apply T_Signal. apply T_ComFrom; auto.
-      * apply U_Unit.
-      * apply T_Unit.
-      * eapply T_Now. eapply T_Reactive; eauto.
-        left; reflexivity.  
-      * apply T_Peer. assumption.
-    + inversion H_trans.
-  - (* tnat *)
-    apply T_Nat.
-Qed.
-    
-    
-    
-    
-    
-    

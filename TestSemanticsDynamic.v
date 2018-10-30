@@ -1,10 +1,359 @@
-Require Import ReTierDynamicSemantics.
-Require Import ReTierSyntax.
+Require Import Syntax.
+Require Import SemanticsDynamic.
+Require Import Coq.Strings.String.
 
 
-(** tests for substitution
-    -------------------------------------------------------------------
-**)
+Example a0:
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (idApp (Id "x")) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (idApp (Id "x")) pUnit)).
+Proof. reflexivity. Qed.
+
+Example b0:
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (idApp (Id "y")) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) unit pUnit)).
+Proof. reflexivity. Qed.
+
+Example c0:
+  [(Id "z") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (idApp (Id "z")) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) unit pUnit)).
+Proof. reflexivity. Qed.
+
+
+Example a1:
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "x") Unit (idApp (Id "x"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "x") Unit (idApp (Id "x"))) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example b1:
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "x") Unit (idApp (Id "y"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "x") Unit unit) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example c1:
+  [(Id "z") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "x") Unit (idApp (Id "z"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "x") Unit unit) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example a2:
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "y") Unit (idApp (Id "x"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "y") Unit (idApp (Id "x"))) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example b2:
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "y") Unit (idApp (Id "y"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "y") Unit (idApp (Id "y"))) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example c2:
+  [(Id "z") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "y") Unit (idApp (Id "z"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "y") Unit unit) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example a3:
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "z") Unit (idApp (Id "x"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "z") Unit (idApp (Id "x"))) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example b3:
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "z") Unit (idApp (Id "y"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "z") Unit unit) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+Example c3:
+  [(Id "z") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "z") Unit (idApp (Id "z"))) unit) pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y") (Unit on (Peer "p")) (app (lambda (Id "z") Unit (idApp (Id "z"))) unit) pUnit)).
+Proof. reflexivity. Qed.
+
+
+Example a1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example b1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example c1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example d1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example e1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example f1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example g1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example h1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example i1':
+  [(Id "x") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "x")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+
+Example a2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "x") Unit unit unit (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example b2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example c2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "x") Unit (asLocalIn (Id "z") Unit unit unit (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example d2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "x") Unit unit unit (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example e2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example f2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "y") Unit (asLocalIn (Id "z") Unit unit unit (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example g2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "x") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "x") Unit unit unit (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example h2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "y") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
+Example i2':
+  [(Id "y") :=_s unit]
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "z") Unit unit (idApp (Id "y")) (Unit on (Peer "p")))) unit)
+        pUnit)) =
+    (placed (Id "x") (Unit on (Peer "p")) unit
+      (placed (Id "y")
+        (Unit on (Peer "p")) 
+        (app (lambda (Id "z") Unit (asLocalIn (Id "z") Unit unit unit (Unit on (Peer "p")))) unit)
+        pUnit)).
+Proof. reflexivity. Qed.
+
 
 Example testSubst_idApp_1: [Id "x" :=_t unit] (idApp (Id "x")) = unit.
 Proof. reflexivity. Qed.
@@ -287,9 +636,7 @@ Proof. reflexivity. Qed.
 
 
 
-(* ====================================================================
-   Tests for implementation of pull based reactive system:
-*)
+
 Definition testR1V1 := some unit.
 Definition testR2V1 := none Unit.
 Definition testReactSys_0: reactive_system := Datatypes.nil.
@@ -316,7 +663,6 @@ Proof.
   reflexivity.
 Qed.
 
-(* tests for 'curentValue' implicity also test 'reactAlloc' *)
 Definition testCurrentValue_1:
   reactive_system_lookup (fst testReactSys_p_1) (snd testReactSys_p_1) = Some testR1V1.
 Proof. reflexivity. Qed.
@@ -342,9 +688,6 @@ Proof. reflexivity. Qed.
 
 
 
-(* ====================================================================
-   Tests for relation 'localStep':
-*)
 
 Definition testTies1 := Ties ["p0" -*-> "pm", "p0" -?-> "po", "p0" -1-> "ps", "p0" -0-> "pn"].
 Definition testPeerTyping1 := TypedInstances [4: "pm", 3: "po", 2: "ps", 1: "pn", 0: "p0"].
@@ -417,15 +760,13 @@ Example testLocalStep_ERemoteFrom_1:
 Proof. apply E_RemoteFrom, E_App, v_some, v_unit. Qed.
 
 
-(* Tests for reactive rules *)
+
 
 Definition testReactSys_var1_p := reactive_system_add (some unit) testReactSys_0.
 Definition testVar1 := fst testReactSys_var1_p.
 Definition testReactSys_var1 := snd testReactSys_var1_p.
 Example testLocalStep_EReactiveVar_1:
-  (* ensure test setup is correct ... *)
   reactive_system_lookup testVar1 testReactSys_var1  = Some (some unit) /\
-  (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   var (some unit); testReactSys_0
   == NoInstances ==> reactApp testVar1; testReactSys_var1.
@@ -452,10 +793,8 @@ Qed.
 
 Definition testReactSys_var1None := reactive_system_update testVar1 (none Unit) testReactSys_var1.
 Example testLocalStep_ESet_1:
-  (* ensure test setup is correct ... *)
   reactive_system_lookup testVar1 testReactSys_var1 = Some (some unit) /\
   reactive_system_lookup testVar1 testReactSys_var1None = Some (none Unit) /\
-  (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   set (reactApp testVar1) (*:=*) (none Unit); testReactSys_var1
   == NoInstances ==> unit; testReactSys_var1None.
@@ -472,9 +811,7 @@ Qed.
 
 Definition testReactSys_var1None_signal1 := reactive_system_update testVar1 (none Unit) testReactSys_var1_signal1.
 Example testLocalStep_ENow_1:
-  (* ensure test setup is correct ... *)
   reactive_system_lookup testVar1 testReactSys_var1_signal1 = Some (some unit) /\
-  (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   now (reactApp testVar1); testReactSys_var1_signal1
   == NoInstances ==> some unit; testReactSys_var1_signal1.
@@ -485,10 +822,8 @@ Proof.
 Qed.
 
 Example testLocalStep_ENow_2:
-  (* ensure test setup is correct ... *)
   reactive_system_lookup testVar1 testReactSys_var1_signal1 = Some (some unit) /\
   reactive_system_lookup testSignal1 testReactSys_var1_signal1 = Some (reactApp testVar1) /\
-  (* actual test ... *)
   (Program NoTies NoTypedInstances) :: NoInstances : Peer "_" |>
   now (reactApp testVar1); testReactSys_var1_signal1
   == NoInstances ==> some unit; testReactSys_var1_signal1.
@@ -498,21 +833,4 @@ Proof.
   - split.
     + reflexivity.
     + eapply E_Now. reflexivity.
-Qed.
-
-
-Example testLocalStep_EAsLocalFrom_2:
-  reactive_system_lookup testSignal1 testReactSys_var1_signal1 = Some (reactApp testVar1) /\
-  (Program testTies1 testPeerTyping1) :: testPeerInsts1 : Peer "p0" |>
-  asLocalFrom (reactApp testSignal1) (*:*) (Signal (Option Unit) on (Peer "ps")) (*from*) (peerApp (Instance 2)); testReactSys_var1_signal1
-  == testPeerInsts1
-  ==> signal (asLocalInFrom (Id "") (*:*) Unit (*=*) unit
-                  (*in*) (now (reactApp testSignal1)) (*:*) (Option Unit on (Peer "ps")) 
-                  (*from*) (peerApp (Instance 2))); testReactSys_var1_signal1.
-Proof. 
-  split.
-  - reflexivity.
-  - apply E_AsLocalFrom.
-    + apply v_reactApp.
-    +  reflexivity.
 Qed.

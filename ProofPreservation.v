@@ -181,7 +181,7 @@ induction H_typing; intros; subst.
     exists Psi'.
     do 2 (split; try assumption).
     apply T_ReactiveVar.
-    eapply reactive_typing_weakening_t; eassumption.
+    assumption.
   + pose proof reactive_typing_add.
     specialize H with program Psi emptyPlaceEnv emptyVarEnv rho P t T (Var T).
     apply H in H_reactive_typing as H1; try assumption || (left; reflexivity).
@@ -200,8 +200,7 @@ induction H_typing; intros; subst.
     destruct H0, H1.
     exists Psi'.
     do 2 (split; try assumption).
-    eapply T_Now; try eassumption.
-    eapply reactive_typing_weakening_t; eassumption.
+    eapply T_Now; eassumption.
   + inversion H_typing.
     subst.
     exists Psi.

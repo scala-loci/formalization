@@ -182,11 +182,11 @@ Inductive evaluation_t : program -> peer_instances -> P -> t -> reactive_system 
 
   | EC_Var: forall program theta theta' P t t' rho rho',
       program :: theta : P |> t; rho == theta' ==> t'; rho' ->
-      program :: theta : P |> var t; rho == theta' ==> var t; rho'
+      program :: theta : P |> var t; rho == theta' ==> var t'; rho'
 
   | EC_Now: forall program theta theta' P t t' rho rho',
       program :: theta : P |> t; rho == theta' ==> t'; rho' ->
-      program :: theta : P |> now t; rho == theta' ==> now t; rho'
+      program :: theta : P |> now t; rho == theta' ==> now t'; rho'
 
   | EC_Set_Left: forall program theta theta' P t0 t0' t1 rho rho',
       program :: theta : P |> t0; rho == theta' ==> t0'; rho' ->
